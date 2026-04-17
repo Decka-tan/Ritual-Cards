@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --color-ritual: #40FFAF;
+  --color-ritual-dark: #077345;
+  --color-background: #060b08;
+  --color-surface: #0a110e;
+}
+
+@layer utilities {
+  .perspective-1000 { perspective: 1000px; }
+  .transform-3d { transform-style: preserve-3d; }
+  .backface-hidden { backface-visibility: hidden; }
+  .rotate-y-180 { transform: rotateY(180deg); }
+  
+  .bg-pattern {
+    background-image: linear-gradient(rgba(64, 255, 175, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(64, 255, 175, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: center center;
+    mask-image: radial-gradient(ellipse at center, black 10%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 80%);
+  }
+
+  .text-stroke {
+    -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+  }
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&display=swap');
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotateX(10deg) rotateY(-10deg); }
+  50% { transform: translateY(-15px) rotateX(-5deg) rotateY(5deg); }
+  100% { transform: translateY(0px) rotateX(10deg) rotateY(-10deg); }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.1); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 4s ease-in-out infinite;
+}
+
+body {
+  background-color: var(--color-background);
+  color: #FFFFFF;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
