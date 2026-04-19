@@ -83,14 +83,14 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       })
     );
     
-    // Wait for fonts
+    // Wait for fonts and high-res assets
     await document.fonts.ready;
     
     // Force layout reflow
     void flatCardRef.current.offsetHeight;
 
-    // Small extra buffer for mobile rendering engines
-    await new Promise(r => setTimeout(r, 200));
+    // Longer buffer for iPhone/Mobile rendering engines to flush base64 images
+    await new Promise(r => setTimeout(r, 600));
 
     return toPng(flatCardRef.current, { 
       pixelRatio: 2, 
@@ -141,6 +141,12 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     }
   }, [triggerCopy]);
 
+  const handleTwitterShare = () => {
+    const text = `This is my Ritual Cards made by @decka_chan\n\nTry yours: https://cards.decka.my.id/`;
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank');
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isRevealed) return;
     if (!cardRef.current) return;
@@ -183,7 +189,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       <div className="absolute -bottom-16 left-0 right-0 flex items-center justify-center opacity-0 pointer-events-none">
         <div className="text-center">
           <div className="text-2xl font-bold text-ritual tracking-widest">RITUAL CARDS</div>
-          <div className="text-sm text-gray-400">WAVE Ã¢â‚¬Â¢ 1</div>
+          <div className="text-sm text-gray-400">WAVE • 1</div>
         </div>
       </div>
 
@@ -236,9 +242,9 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                {/* Content Layout */}
                <div className="p-3 h-full flex flex-col relative z-20">
                {/* Top Bar */}
-               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
+               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
                  <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-                 <span className="font-bold text-md sm:text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
+                 <span className="flex-1 min-w-0 font-bold text-md sm:text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
                </div>
 
@@ -332,9 +338,9 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
           <div className="p-3 h-full flex flex-col relative z-20">
             {/* Top Bar */}
-            <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
+            <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
               <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-              <span className="font-bold text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
+              <span className="flex-1 min-w-0 font-bold text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
               <Sparkles className="w-5 h-5 text-ritual shrink-0 relative z-10" />
             </div>
             {/* Avatar */}
