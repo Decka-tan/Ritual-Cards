@@ -7,43 +7,88 @@ export default async function handler(req, res) {
 
   console.log(`[twitter] Fetching profile for: ${cleanUsername}`);
 
-  // ── 1. Twitter's public Follow Button info API ──
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const twRes = await fetch(
-      `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`,
-      { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RitualCards/1.0)' }, signal: ctrl.signal }
-    );
-    clearTimeout(t);
-    console.log(`[twitter] CDN API status: ${twRes.status}`);
-    if (twRes.ok) {
-      const text = await twRes.text();
-      console.log(`[twitter] CDN API raw response: ${text.slice(0, 200)}`);
-      const data = JSON.parse(text);
-      // Response can be array or object keyed by screen_name
-      if (Array.isArray(data) && data[0]?.name) {
-        displayName = data[0].name;
-        console.log(`[twitter] displayName from CDN API (array): ${displayName}`);
-      } else if (data && typeof data === 'object') {
-        const user = Object.values(data)[0];
-        if (user?.name) {
-          displayName = user.name;
-          console.log(`[twitter] displayName from CDN API (object): ${displayName}`);
-        }
-      }
-    }
-  } catch (e) {
-    console.log(`[twitter] CDN API failed: ${e.message}`);
-  }
-
-  // ── 2. Nitter scraping (for avatar + displayName fallback) ──
   const nitterInstances = [
-    'https://nitter.net',
     'https://nitter.poast.org',
     'https://nitter.privacydev.net',
+    'https://nitter.net',
+    'https://nitter.cz',
+    'https://nitter.1d4.us',
   ];
 
+  // ── 1. Nitter Mastodon-compatible JSON API (structured, no HTML parsing) ──
+  for (const instance of nitterInstances) {
+    if (displayName !== cleanUsername) break;
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const r = await fetch(`${instance}/api/v1/accounts/lookup?acct=${cleanUsername}`, {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'Mozilla/5.0' },
+        signal: ctrl.signal,
+      });
+      clearTimeout(t);
+      console.log(`[twitter] Mastodon API ${instance}: ${r.status}`);
+      if (r.ok) {
+        const data = await r.json();
+        if (data?.display_name && data.display_name !== cleanUsername) {
+          displayName = data.display_name;
+          console.log(`[twitter] displayName from Mastodon API: ${displayName}`);
+          break;
+        }
+      }
+    } catch (e) { console.log(`[twitter] Mastodon API ${instance} failed: ${e.message}`); }
+  }
+
+  // ── 2. Twitter Follow Button CDN API ──
+  if (displayName === cleanUsername) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const r = await fetch(
+        `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: ctrl.signal }
+      );
+      clearTimeout(t);
+      console.log(`[twitter] CDN API status: ${r.status}`);
+      if (r.ok) {
+        const text = await r.text();
+        console.log(`[twitter] CDN API raw: ${text.slice(0, 200)}`);
+        const data = JSON.parse(text);
+        const user = Array.isArray(data) ? data[0] : Object.values(data || {})[0];
+        if (user?.name && user.name !== cleanUsername) {
+          displayName = user.name;
+          console.log(`[twitter] displayName from CDN API: ${displayName}`);
+        }
+      }
+    } catch (e) { console.log(`[twitter] CDN API failed: ${e.message}`); }
+  }
+
+  // ── 3. Nitter RSS (structured, lighter than HTML) ──
+  if (displayName === cleanUsername) {
+    for (const instance of nitterInstances) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(`${instance}/${cleanUsername}/rss`, {
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/rss+xml, text/xml' },
+          signal: ctrl.signal,
+        });
+        clearTimeout(t);
+        console.log(`[twitter] RSS ${instance}: ${r.status}`);
+        if (r.ok) {
+          const xml = await r.text();
+          const match = xml.match(/<title><!\[CDATA\[(.+?)\s*\/\s*[^<\]]+\]\]><\/title>/)
+                     || xml.match(/<title>([^<\/]+?)\s*\/\s*[^<]+<\/title>/);
+          if (match?.[1] && match[1].trim() !== cleanUsername) {
+            displayName = match[1].trim();
+            console.log(`[twitter] displayName from RSS: ${displayName}`);
+            break;
+          }
+        }
+      } catch (e) { console.log(`[twitter] RSS ${instance} failed: ${e.message}`); }
+    }
+  }
+
+  // ── 4. Nitter scraping (for avatar + fallback) ──
   for (const instance of nitterInstances) {
     try {
       const ctrl = new AbortController();
