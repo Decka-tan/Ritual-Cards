@@ -199,7 +199,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       >
         <div className="w-full h-full relative transform-3d">
           {/* Card Back (Always rendered, visible when not flipped) */}
-          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center" style={{ transform: 'translateZ(-1px)' }}>
+          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center transition-opacity duration-300" style={{ transform: 'translateZ(-1px)', opacity: isFlipped ? 1 : 0 }}>
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.15)_0%,transparent_70%)]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-spin-slow">
               <div className="w-full h-full bg-[conic-gradient(from_0deg,transparent,rgba(64,255,175,0.3),transparent,rgba(7,115,69,0.3),transparent)] blur-xl" />
@@ -217,7 +217,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
           </div>
 
           {/* Card Front (Flip side) */}
-          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden" style={{ transform: 'rotateY(180deg) translateZ(1px)' }}>
+          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden transition-opacity duration-300" style={{ transform: 'rotateY(180deg) translateZ(1px)', opacity: isFlipped ? 0 : 1 }}>
              {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
              <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
                background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
@@ -262,14 +262,14 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                  <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
                    <RitualLogo className="w-10 h-10 text-ritual" />
                  </div>
-                 <div className="flex-1 pb-2">
-                   <div className="font-bold text-lg text-gray-100 truncate pb-1">{getArchetype(profile?.username || '').title}</div>
-                   <div className="text-sm text-gray-400">{getArchetype(profile?.username || '').subtitle}</div>
+                 <div className="flex-1 pb-2 min-w-0">
+                   <div className="font-bold text-md sm:text-lg text-gray-100 truncate pb-0.5">{getArchetype(profile?.username || '').title}</div>
+                   <div className="text-xs sm:text-sm text-gray-400 break-words leading-tight">{getArchetype(profile?.username || '').subtitle}</div>
                  </div>
                </div>
 
                {/* Ritual Card text in bottom left */}
-               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">
+               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30 hidden sm:block">
                  RITUAL CARD
                </div>
 
@@ -493,7 +493,7 @@ export default function App() {
         </div>
 
         {/* Persistent Title Section - Logo Image, Always Below Card */}
-        <div className="mt-8 mb-4 flex flex-col items-center">
+        <div className="mt-4 mb-2 flex flex-col items-center">
           <img
             src="/ritual-cards-logo.png"
             alt="RITUAL CARDS WAVE Ã¢â‚¬Â¢ 1"
@@ -536,9 +536,9 @@ export default function App() {
               >
                 {/* Status text if mapped */}
                 {step === 'card' && (
-                  <div className="text-gray-400 text-lg mb-2">
+                  <div className="text-gray-400 text-md sm:text-lg mb-1">
                     Signed in as <span className="text-ritual font-bold">@{profile?.username || handle}</span>
-                    <p className="text-xs text-gray-500 mt-1">Click card to flip | Use icons to share</p>
+                    <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">Click card to flip | Use icons to share</p>
                   </div>
                 )}
 
