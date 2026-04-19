@@ -198,7 +198,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       >
         <div className="w-full h-full relative transform-3d">
           {/* Card Back (Always rendered, visible when not flipped) */}
-          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center transition-opacity duration-300" style={{ transform: 'translateZ(-1px)', opacity: isFlipped ? 1 : 0 }}>
+          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center transition-opacity duration-300" style={{ transform: 'translateZ(-1px)', opacity: (!isRevealed || isFlipped) ? 1 : 0 }}>
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.15)_0%,transparent_70%)]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-spin-slow">
               <div className="w-full h-full bg-[conic-gradient(from_0deg,transparent,rgba(64,255,175,0.3),transparent,rgba(7,115,69,0.3),transparent)] blur-xl" />
@@ -216,7 +216,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
           </div>
 
           {/* Card Front (Flip side) */}
-          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden transition-opacity duration-300" style={{ transform: 'rotateY(180deg) translateZ(1px)', opacity: isFlipped ? 0 : 1 }}>
+          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden transition-opacity duration-300" style={{ transform: 'rotateY(180deg) translateZ(1px)', opacity: (isRevealed && !isFlipped) ? 1 : 0 }}>
              {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
              <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
                background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
@@ -231,14 +231,14 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                {/* Content Layout */}
                <div className="p-3 h-full flex flex-col relative z-20">
                {/* Top Bar */}
-               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
+               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
                  <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-                 <span className="font-bold text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
-                 <Sparkles className="w-5 h-5 text-ritual shrink-0 relative z-10" />
+                 <span className="font-bold text-md sm:text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
+                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
                </div>
 
                {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
-               <div className="flex-1 mt-3 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center" style={{ minHeight: '280px' }}>
+                <div className="flex-1 mt-2 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center min-h-[220px] sm:min-h-[280px]">
                   <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
                     {/* Same border as card */}
                     <div className="absolute inset-0 rounded-xl p-[8px]" style={{
@@ -257,7 +257,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                </div>
 
                {/* Bottom Bar */}
-               <div className="p-0 m-3 mt-0 pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
+               <div className="p-0 m-3 mt-0 pb-8 sm:pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
                  <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
                    <RitualLogo className="w-10 h-10 text-ritual" />
                  </div>
@@ -340,8 +340,10 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                 }} />
                 <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar && (
+                    {profile?.avatar ? (
                       <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                    ) : (
+                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                     )}
                   </div>
                 </div>
