@@ -89,8 +89,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     return toPng(flatCardRef.current, { 
       pixelRatio: 2, 
       cacheBust: true,
-      includeQueryParams: true,
-      fontEmbedCSS: '' 
+      includeQueryParams: true
     });
   };
 
