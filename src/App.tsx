@@ -9,7 +9,7 @@ const fetchTwitterProfile = async (username: string) => {
     const cleanUsername = username.replace('@', '');
     const apiUrl = import.meta.env.DEV
       ? `http://localhost:3001/api/twitter/${cleanUsername}?t=${Date.now()}`
-      : `/api/twitter/${cleanUsername}?t=${Date.now()}`;
+      : `https://ritual-twitter-proxy.artelamon.workers.dev/api/twitter/${cleanUsername}?t=${Date.now()}`;
 
     const res = await fetch(apiUrl);
 
