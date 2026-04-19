@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github } from 'lucide-react';
+import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github, Wand2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 // Fetch profile from API (works with both local server and Vercel serverless)
@@ -59,7 +59,7 @@ const getArchetype = (username: string) => {
   return ARCHETYPES[hash % ARCHETYPES.length];
 };
 
-const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number, triggerCopy?: number }) => {
+const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy, overrideAvatar }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number, triggerCopy?: number, overrideAvatar?: string | null }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const cardFrontRef = useRef<HTMLDivElement>(null);
   const flatCardRef = useRef<HTMLDivElement>(null);
@@ -226,8 +226,8 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                     }} />
                     <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
+                    {overrideAvatar || profile?.avatar ? (
+                      <img src={overrideAvatar || profile?.avatar || ""} alt={profile?.username} className="w-full h-full object-cover" />
                     ) : (
                       <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
                     )}
@@ -364,6 +364,27 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [triggerDownload, setTriggerDownload] = useState(0);
   const [triggerCopy, setTriggerCopy] = useState(0);
+  const [ritualizedAvatar, setRitualizedAvatar] = useState<string | null>(null);
+  const [isRitualizing, setIsRitualizing] = useState(false);
+
+  const handleRitualize = async () => {
+    if (!profile || isRitualizing) return;
+    setIsRitualizing(true);
+    try {
+      const res = await fetch('https://ritual-twitter-proxy.artelamon.workers.dev/api/ritual-pfp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: profile.username, displayName: profile.displayName }),
+      });
+      const data = await res.json();
+      if (data.avatar) setRitualizedAvatar(data.avatar);
+      else alert('Ritual PFP generation failed.');
+    } catch {
+      alert('Ritual PFP generation failed.');
+    } finally {
+      setIsRitualizing(false);
+    }
+  };
   const formSectionRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -426,9 +447,10 @@ export default function App() {
             <Card3D
               step={step}
               profile={profile}
-              onReset={() => { setStep('input'); setHandle(''); setProfile(null); }}
+              onReset={() => { setStep('input'); setHandle(''); setProfile(null); setRitualizedAvatar(null); }}
               triggerDownload={triggerDownload}
               triggerCopy={triggerCopy}
+              overrideAvatar={ritualizedAvatar}
             />
           </div>
 
@@ -465,6 +487,16 @@ export default function App() {
                 title="Download Card Image"
               >
                 <Download className="w-5 h-5 text-gray-300 group-hover:text-ritual" />
+              </button>
+              <button
+                onClick={handleRitualize}
+                disabled={isRitualizing}
+                className="w-12 h-12 rounded-xl bg-ritual/10 hover:bg-ritual/20 border border-ritual/30 hover:border-ritual/60 flex items-center justify-center transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Generate Ritual PFP (AI)"
+              >
+                {isRitualizing
+                  ? <Loader2 className="w-5 h-5 text-ritual animate-spin" />
+                  : <Wand2 className="w-5 h-5 text-ritual/70 group-hover:text-ritual" />}
               </button>
             </motion.div>
           )}
