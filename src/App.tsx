@@ -92,10 +92,13 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     // Longer buffer for iPhone/Mobile rendering engines to flush base64 images
     await new Promise(r => setTimeout(r, 1000));
 
+    // Double-pass capture: Calling it twice is a known fix for iOS Safari/WebKit 
+    // where images/fonts don't render on the first pass through foreignObject.
+    await toPng(flatCardRef.current, { pixelRatio: 1, cacheBust: true });
+    
     return toPng(flatCardRef.current, { 
       pixelRatio: 2, 
-      cacheBust: true,
-      includeQueryParams: true
+      cacheBust: true
     });
   };
 
@@ -260,7 +263,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                     {profile?.avatar ? (
                       <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
                     ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
                     )}
                       </div>
                     </div>
@@ -334,8 +337,8 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
         }} />
         {/* Inner area */}
         <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0A1215] via-[#1a3d30] to-[#0A1215]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
+          <div className="absolute inset-0 bg-[#0A1215]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.2)_0%,transparent_100%)]" />
           <div className="p-3 h-full flex flex-col relative z-20">
             {/* Top Bar */}
             <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
@@ -354,7 +357,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                     {profile?.avatar ? (
                       <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
                     ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
                     )}
                   </div>
                 </div>
