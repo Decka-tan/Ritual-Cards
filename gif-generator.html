@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ritual Card Reveal</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    .container {
+      position: relative;
+      width: 350px;
+      height: 450px;
+    }
+
+    /* Card spawn animation */
+    .card {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #1a2a25 0%, #0d1412 100%);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+      transform: scale(0.8);
+      box-shadow: 0 0 40px rgba(64, 255, 175, 0.2);
+    }
+
+    @keyframes cardReveal {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Background pattern */
+    .bg-pattern {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(rgba(64, 255, 175, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(64, 255, 175, 0.03) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* Glow effect */
+    .glow {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(64, 255, 175, 0.3) 0%, transparent 70%);
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    /* Profile image container */
+    .profile-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 150px;
+      animation: profileReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: 0.3s;
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+
+    @keyframes profileReveal {
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .profile-ring {
+      position: absolute;
+      inset: -4px;
+      border: 2px solid transparent;
+      border-radius: 50%;
+      background: linear-gradient(45deg, #40FFAF, #077345) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: ringRotate 3s linear infinite;
+    }
+
+    @keyframes ringRotate {
+      to { transform: rotate(360deg); }
+    }
+
+    .profile-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1a3a30 0%, #0d1f1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 3px solid rgba(64, 255, 175, 0.3);
+    }
+
+    .profile-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-logo {
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 0 15px rgba(64, 255, 175, 0.6));
+    }
+
+    /* Text content */
+    .content {
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out forwards;
+      animation-delay: 0.5s;
+      transform: translateY(10px);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out forwards;
+      animation-delay: 0.6s;
+      transform: translateY(10px);
+    }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Badge */
+    .badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(64, 255, 175, 0.15);
+      border: 1px solid rgba(64, 255, 175, 0.4);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      color: #40FFAF;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+      opacity: 0;
+      animation: fadeUp 0.5s ease-out forwards;
+      animation-delay: 0.7s;
+      transform: translateY(10px);
+    }
+
+    /* Sparkles */
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #40FFAF;
+      clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+      animation: sparkle 2s ease-in-out infinite;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .sparkle:nth-child(1) { top: 20%; left: 15%; animation-delay: 0s; }
+    .sparkle:nth-child(2) { top: 30%; right: 20%; animation-delay: 0.5s; }
+    .sparkle:nth-child(3) { bottom: 25%; left: 20%; animation-delay: 1s; }
+    .sparkle:nth-child(4) { bottom: 35%; right: 15%; animation-delay: 1.5s; }
+
+    .replay {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #40FFAF;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="bg-pattern"></div>
+      <div class="glow"></div>
+
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+      <div class="sparkle"></div>
+
+      <div class="badge">WAVE 1</div>
+
+      <div class="profile-container">
+        <div class="profile-ring"></div>
+        <div class="profile-image">
+          <img src="/Logo_RItual_White.png" class="profile-logo" alt="Ritual" onerror="this.style.display='none'">
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="title">RITUAL</div>
+        <div class="subtitle">Real Ones</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="replay" onclick="location.reload()">Replay</button>
+</body>
+</html>

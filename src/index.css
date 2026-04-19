@@ -13,18 +13,82 @@
   .transform-3d { transform-style: preserve-3d; }
   .backface-hidden { backface-visibility: hidden; }
   .rotate-y-180 { transform: rotateY(180deg); }
-  
+
   .bg-pattern {
     background-image: linear-gradient(rgba(64, 255, 175, 0.05) 1px, transparent 1px),
       linear-gradient(90deg, rgba(64, 255, 175, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
     background-position: center center;
-    mask-image: radial-gradient(ellipse at center, black 10%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 80%);
+    mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 60%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 60%);
   }
 
   .text-stroke {
     -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+  }
+
+  /* TCG Silver Gradient Border */
+  .tcg-silver-border {
+    position: relative;
+    background: #050C09;
+    border-radius: 24px;
+  }
+
+  .tcg-silver-border::before {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 28px;
+    padding: 6px;
+    background: linear-gradient(135deg,
+      #C0C0C0 0%,
+      #E8E8E8 25%,
+      #A8A8A8 50%,
+      #D4D4D4 75%,
+      #B8B8B8 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .tcg-silver-border::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 28px;
+    background: linear-gradient(45deg,
+      transparent 30%,
+      rgba(192, 192, 192, 0.6) 50%,
+      transparent 70%);
+    background-size: 250% 250%;
+    animation: silverShimmer 4s linear infinite;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  @keyframes silverShimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+  }
+
+  /* Ritual Logo Pattern Background */
+  .ritual-logo-pattern {
+    position: relative;
+    background-image: url('/Logo_RItual_White.png');
+    background-repeat: repeat;
+    background-size: 60px 60px;
+    background-position: center;
+    opacity: 0.03;
+  }
+
+  .ritual-logo-pattern::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 0%, rgba(5, 12, 9, 0.8) 70%);
+    pointer-events: none;
   }
 }
 
@@ -55,6 +119,60 @@
 
 .animate-pulse-slow {
   animation: pulse-slow 4s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* TCG Card Holographic Border */
+.holo-border {
+  position: relative;
+}
+
+.holo-border::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(192, 192, 192, 0.8) 50%,
+    transparent 70%
+  );
+  background-size: 200% 200%;
+  animation: shimmer 3s linear infinite;
+  z-index: -1;
+}
+
+/* TCG Card Shiny Background */
+.tcg-shine {
+  background: linear-gradient(
+    110deg,
+    #0a1a12 0%,
+    #0d2818 25%,
+    #0a1a12 50%,
+    #0d2818 75%,
+    #0a1a12 100%
+  );
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
 }
 
 body {
