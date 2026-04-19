@@ -374,6 +374,7 @@ export default function App() {
       setProfile(fetchedProfile);
       setIsLoading(false);
       setStep('eligible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
