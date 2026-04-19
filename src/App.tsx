@@ -35,7 +35,7 @@ const fetchTwitterProfile = async (username: string) => {
 };
 
 const RitualLogo = ({ className }: { className?: string }) => (
-  <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} />
+  <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} crossOrigin="anonymous" />
 );
 
 const ARCHETYPES = [
@@ -71,7 +71,28 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
 
   const captureCardFront = async (): Promise<string | null> => {
     if (!flatCardRef.current) return null;
-    return toPng(flatCardRef.current, { pixelRatio: 2, cacheBust: true });
+    
+    // Ensure images are loaded before capture
+    const images = flatCardRef.current.getElementsByTagName('img');
+    await Promise.all(
+      Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      })
+    );
+    
+    // Small extra buffer for mobile rendering engines
+    await new Promise(r => setTimeout(r, 100));
+
+    return toPng(flatCardRef.current, { 
+      pixelRatio: 2, 
+      cacheBust: true,
+      includeQueryParams: true,
+      fontEmbedCSS: '' 
+    });
   };
 
 
@@ -227,9 +248,9 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                     <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
+                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
                     ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
+                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" crossOrigin="anonymous" />
                     )}
                       </div>
                     </div>
@@ -321,7 +342,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                 <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     {profile?.avatar && (
-                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
+                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
                     )}
                   </div>
                 </div>
