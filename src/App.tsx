@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github } from 'lucide-react';
-import { toPng } from 'html-to-image';
+import { toPng, toBlob } from 'html-to-image';
 
 // Fetch profile from API (works with both local server and Vercel serverless)
 const fetchTwitterProfile = async (username: string) => {
@@ -151,11 +151,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     }
   }, [triggerCopy]);
 
-  const handleTwitterShare = () => {
-    const text = `This is my Ritual Cards made by @decka_chan\n\nTry yours: https://cards.decka.my.id/`;
-    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-    window.open(shareUrl, '_blank');
-  };
+
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isRevealed) return;
@@ -409,6 +405,12 @@ export default function App() {
   const [triggerDownload, setTriggerDownload] = useState(0);
   const [triggerCopy, setTriggerCopy] = useState(0);
   const formSectionRef = useRef<HTMLDivElement>(null);
+ 
+  const handleTwitterShare = () => {
+    const text = `This is my Ritual Cards made by @decka_chan\n\nTry yours: https://cards.decka.my.id/`;
+    const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(shareUrl, '_blank');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
