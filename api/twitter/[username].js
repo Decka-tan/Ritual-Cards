@@ -5,6 +5,23 @@ export default async function handler(req, res) {
   let displayName = cleanUsername;
   let avatarBase64 = null;
 
+  // ── Primary: Twitter's public Follow Button API (no auth required) ──
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const twRes = await fetch(
+      `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`,
+      { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: ctrl.signal }
+    );
+    clearTimeout(t);
+    if (twRes.ok) {
+      const data = await twRes.json();
+      if (Array.isArray(data) && data[0]?.name) {
+        displayName = data[0].name;
+      }
+    }
+  } catch (_) {}
+
   const nitterInstances = [
     'https://nitter.net',
     'https://nitter.poast.org',
@@ -31,21 +48,24 @@ export default async function handler(req, res) {
       const html = await response.text();
       if (html.length < 500) continue;
 
-      const namePatterns = [
-        /<title[^>]*>(.+?)\s*\(@[^)]+\)/,
-        /<a class="profile-card-fullname"[^>]*>([^<]+)<\/a>/,
-        /<span class="profile-name"[^>]*>([^<]+)<\/span>/,
-      ];
+      // Only scrape display name from nitter if Twitter API didn't get it
+      if (displayName === cleanUsername) {
+        const namePatterns = [
+          /<title[^>]*>(.+?)\s*\(@[^)]+\)/,
+          /<a class="profile-card-fullname"[^>]*>([^<]+)<\/a>/,
+          /<span class="profile-name"[^>]*>([^<]+)<\/span>/,
+        ];
 
-      for (const pattern of namePatterns) {
-        const match = html.match(pattern);
-        if (match?.[1]) {
-          const name = match[1]
-            .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
-          if (name && name !== cleanUsername) {
-            displayName = name;
-            break;
+        for (const pattern of namePatterns) {
+          const match = html.match(pattern);
+          if (match?.[1]) {
+            const name = match[1]
+              .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+              .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+            if (name && name !== cleanUsername) {
+              displayName = name;
+              break;
+            }
           }
         }
       }
