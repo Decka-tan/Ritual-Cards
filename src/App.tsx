@@ -94,23 +94,28 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
 
     // Double-pass capture: Calling it twice is a known fix for iOS Safari/WebKit 
     // where images/fonts don't render on the first pass through foreignObject.
-    await toPng(flatCardRef.current, { pixelRatio: 1, cacheBust: true });
+    await toBlob(flatCardRef.current, { pixelRatio: 1, cacheBust: true });
     
-    return toPng(flatCardRef.current, { 
+    const blob = await toBlob(flatCardRef.current, { 
       pixelRatio: 2, 
       cacheBust: true
     });
+    
+    if (!blob) return null;
+    return URL.createObjectURL(blob);
   };
 
 
   const handleDownloadImage = async () => {
     try {
-      const dataUrl = await captureCardFront();
-      if (!dataUrl) return;
+      const url = await captureCardFront();
+      if (!url) return;
       const link = document.createElement('a');
       link.download = `ritual-card-${profile?.username || 'wave1'}.png`;
-      link.href = dataUrl;
+      link.href = url;
       link.click();
+      // Clean up the object URL after a short delay
+      setTimeout(() => URL.revokeObjectURL(url), 100);
     } catch (error) {
       console.error('Failed to download image:', error);
       alert('Failed to download card image. Please try again.');
@@ -119,10 +124,12 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
 
   const handleCopyToClipboard = async () => {
     try {
-      const dataUrl = await captureCardFront();
-      if (!dataUrl) return;
-      const blob = await (await fetch(dataUrl)).blob();
+      const url = await captureCardFront();
+      if (!url) return;
+      const response = await fetch(url);
+      const blob = await response.blob();
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      URL.revokeObjectURL(url);
       alert('Card copied to clipboard!');
     } catch (error) {
       console.error('Failed to copy image:', error);
@@ -343,8 +350,9 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
             {/* Top Bar */}
             <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
               <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-              <span className="flex-1 min-w-0 font-bold text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
-              <Sparkles className="w-5 h-5 text-ritual shrink-0 relative z-10" />
+              <span className="flex-1 min-w-0 font-bold text-lg text-white truncate relative z-10" style={{ fontFamily: 'Inter, sans-serif' }}>
+                {profile?.displayName || profile?.username || 'Your Username'}
+              </span>
             </div>
             {/* Avatar */}
             <div className="flex-1 mt-3 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center" style={{ minHeight: '280px' }}>
