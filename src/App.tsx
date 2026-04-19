@@ -267,7 +267,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                </div>
 
                {/* Ritual Card text in bottom left */}
-               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30 hidden sm:block">
+               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">
                  RITUAL CARD
                </div>
 
