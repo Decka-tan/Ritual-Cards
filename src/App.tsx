@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github } from 'lucide-react';
+import { toPng } from 'html-to-image';
 
-// Fetch profile from local proxy server
+// Fetch profile from API (works with both local server and Vercel serverless)
 const fetchTwitterProfile = async (username: string) => {
   try {
     const cleanUsername = username.replace('@', '');
+    const apiUrl = import.meta.env.DEV
+      ? `http://localhost:3001/api/twitter/${cleanUsername}?t=${Date.now()}`
+      : `/api/twitter/${cleanUsername}?t=${Date.now()}`;
 
-    // Bypass browser cache with a timestamp so it fetches the fresh Base64
-    const res = await fetch(`http://localhost:3002/api/twitter/${cleanUsername}?t=${Date.now()}`);
+    const res = await fetch(apiUrl);
 
     if (res.ok) {
       const data = await res.json();
@@ -25,10 +27,10 @@ const fetchTwitterProfile = async (username: string) => {
 
   // Absolute fallback
   const cleanUsername = username.replace('@', '');
-  return { 
+  return {
     avatar: null,
-    displayName: cleanUsername, 
-    username: cleanUsername 
+    displayName: cleanUsername,
+    username: cleanUsername
   };
 };
 
@@ -36,41 +38,67 @@ const RitualLogo = ({ className }: { className?: string }) => (
   <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} />
 );
 
-const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number }) => {
+const ARCHETYPES = [
+  { title: 'Ritualized',   subtitle: 'People ascended to ritual forge' },
+  { title: 'The Forged',   subtitle: 'People shaped by the fire' },
+  { title: 'Summoned',     subtitle: 'People called before they knew' },
+  { title: 'Cursed',       subtitle: 'People marked by the ritual' },
+  { title: 'Blessed',      subtitle: 'People the cosmos chose' },
+  { title: 'Forerunner',   subtitle: 'People who crossed early' },
+  { title: 'Architect',    subtitle: 'People still in the forge' },
+  { title: 'Soulsmith',    subtitle: "People building what's next" },
+  { title: 'Kindred',      subtitle: 'People bound by the signal' },
+];
+
+// Deterministic per username Ã¢â‚¬â€ same user always gets same archetype
+const getArchetype = (username: string) => {
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = (hash * 31 + username.charCodeAt(i)) >>> 0;
+  }
+  return ARCHETYPES[hash % ARCHETYPES.length];
+};
+
+const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number, triggerCopy?: number }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const cardFrontRef = useRef<HTMLDivElement>(null);
+  const flatCardRef = useRef<HTMLDivElement>(null);
+  const screenshotWrapperRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0, scale: 1 });
   const [glare, setGlare] = useState({ x: 50, y: 50, alpha: 0 });
   const [isFlipped, setIsFlipped] = useState(false);
   const isRevealed = step === 'card';
 
+  const captureCardFront = async (): Promise<string | null> => {
+    if (!flatCardRef.current) return null;
+    return toPng(flatCardRef.current, { pixelRatio: 2, cacheBust: true });
+  };
+
+
   const handleDownloadImage = async () => {
-    if (!cardFrontRef.current) return;
-
     try {
-      // Temporarily reset rotation for clean screenshot
-      const currentRotation = { x: tilt.x, y: tilt.y };
-      setTilt({ x: 0, y: 0, scale: 1 });
-
-      // Wait a bit for the rotation to reset
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const canvas = await html2canvas(cardFrontRef.current, {
-        backgroundColor: null,
-        scale: 2,
-        logging: false,
-        useCORS: true
-      });
-
+      const dataUrl = await captureCardFront();
+      if (!dataUrl) return;
       const link = document.createElement('a');
-      link.download = `ritual-card-${profile?.username || 'unknown'}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = `ritual-card-${profile?.username || 'wave1'}.png`;
+      link.href = dataUrl;
       link.click();
-
-      // Restore rotation
-      setTilt(currentRotation);
     } catch (error) {
       console.error('Failed to download image:', error);
+      alert('Failed to download card image. Please try again.');
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      const dataUrl = await captureCardFront();
+      if (!dataUrl) return;
+      const blob = await (await fetch(dataUrl)).blob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      alert('Card copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      alert('Copy failed Ã¢â‚¬â€ try the download button instead.');
     }
   };
 
@@ -80,6 +108,13 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
       handleDownloadImage();
     }
   }, [triggerDownload]);
+
+  // Trigger copy when prop changes
+  React.useEffect(() => {
+    if (triggerCopy && triggerCopy > 0) {
+      handleCopyToClipboard();
+    }
+  }, [triggerCopy]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isRevealed) return;
@@ -118,7 +153,16 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
   const holographicPattern = `url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 100 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(50, 50) rotate(45) translate(-50, -50)'%3E%3Cpath d='M25 25h15v35h-15zM60 40h15v35h-15zM25 25h50v15h-50zM25 60h50v15h-50z' fill='white' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E")`;
 
   return (
-    <div className="perspective-1000 w-[360px] h-[500px]">
+    <div ref={screenshotWrapperRef} className="relative inline-block">
+      {/* Hidden branding for screenshot */}
+      <div className="absolute -bottom-16 left-0 right-0 flex items-center justify-center opacity-0 pointer-events-none">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-ritual tracking-widest">RITUAL CARDS</div>
+          <div className="text-sm text-gray-400">WAVE Ã¢â‚¬Â¢ 1</div>
+        </div>
+      </div>
+
+      <div className="perspective-1000 w-[360px] h-[500px]">
       <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
@@ -128,8 +172,8 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
           rotateX: tilt.x,
           rotateY: tilt.y + (isFlipped ? 360 : 180),
           scale: tilt.scale
-        } : { rotateX: [10, -5, 10], rotateY: [-10, 5, -10], y: [0, -15, 0] }}
-        transition={isRevealed ? { type: 'spring', stiffness: 300, damping: 20 } : { repeat: Infinity, duration: 6, ease: "easeInOut" }}
+        } : { rotateX: [0, 0, 8, -4, 0, 0], rotateY: [0, 360, 350, 370, 360, 720], y: [0, 0, -12, -8, 0, 0] }}
+        transition={isRevealed ? { type: 'spring', stiffness: 300, damping: 20 } : { repeat: Infinity, duration: 3, times: [0, 0.1, 0.35, 0.65, 0.9, 1], ease: ["easeIn", "easeOut", "easeInOut", "easeIn", "linear"] }}
         className="w-full h-full transform-3d cursor-pointer relative"
       >
         <div className="w-full h-full relative transform-3d">
@@ -141,10 +185,10 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
             </div>
 
             <div className="relative z-10 flex flex-col items-center justify-center">
-              <RitualLogo className="w-24 h-24 text-ritual drop-shadow-[0_0_20px_rgba(64,255,175,0.8)]" />
+              <RitualLogo className="w-50 h-50 text-ritual drop-shadow-[0_0_20px_rgba(64,255,175,0.8)]" />
             </div>
 
-            <div className="absolute bottom-6 inset-x-0 flex justify-center z-10">
+            <div className="absolute bottom-6 right-6">
                <div className="px-4 py-1.5 rounded-full border border-white/20 bg-black/40 backdrop-blur-md text-xs font-bold tracking-[0.2em]">
                  RITUAL CARDS
               </div>
@@ -152,65 +196,72 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
           </div>
 
           {/* Card Front (Flip side) */}
-          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden tcg-silver-border">
-             {/* Base Background with Logo Pattern */}
-             <div className="absolute inset-0 ritual-logo-pattern" />
-             <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0F2018,#060D0A)]" />
-             <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-transparent to-ritual/10 pointer-events-none z-10" />
+          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden">
+             {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
+             <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
+               background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+             }} />
 
-             {/* Content Layout */}
-             <div className="p-3 h-full flex flex-col relative z-20">
+             {/* Inner card area with padding */}
+             <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
+               {/* Black to Green gradient background (more pronounced green) */}
+               <div className="absolute inset-0 bg-gradient-to-b from-[#0A1215] via-[#1a3d30] to-[#0A1215]" />
+               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
+
+               {/* Content Layout */}
+               <div className="p-3 h-full flex flex-col relative z-20">
                {/* Top Bar */}
-               <div className="bg-[#111A15] p-3 rounded-t-xl rounded-b flex items-center justify-between border border-white/5 relative overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-r from-ritual/5 to-transparent" />
-                 <span className="font-bold text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Real One'}</span>
+               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
+                 <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
+                 <span className="font-bold text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
                  <Sparkles className="w-5 h-5 text-ritual shrink-0 relative z-10" />
                </div>
 
-               {/* Main Character Art Space - Profile Avatar or Sci-Fi Core */}
-               <div className="flex-1 mt-2 mb-2 rounded-xl overflow-hidden relative border border-white/10 bg-[#091510] group perspective-1000">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(64,255,175,0.05)_100%)]" />
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden transition-transform duration-1000 ease-out group-hover:scale-105 transform-3d">
-                    {/* Glowing Cosmos Orbs */}
-                    <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-ritual/30 rounded-full blur-3xl mix-blend-screen" />
-                    <div className="absolute bottom-1/4 right-1/4 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl mix-blend-screen" />
-
-                    {profile ? (
-                      <div className="w-full h-full relative z-10 w-full h-full bg-cover bg-center rounded-xl shadow-[0_0_40px_rgba(64,255,175,0.4)] border-2 border-ritual/40" style={{ backgroundImage: `url("https://picsum.photos/seed/${profile.username}/400/400")` }}>
-                      </div>
+               {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
+               <div className="flex-1 mt-3 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center" style={{ minHeight: '280px' }}>
+                  <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
+                    {/* Same border as card */}
+                    <div className="absolute inset-0 rounded-xl p-[8px]" style={{
+                      background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+                    }} />
+                    <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
+                      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    {profile?.avatar ? (
+                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
                     ) : (
-                      <motion.div
-                        animate={{ rotateY: 360, rotateX: 360 }}
-                        transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                        className="relative w-32 h-32 transform-3d"
-                      >
-                        <div className="absolute inset-0 border-2 border-ritual/40 rounded-xl backdrop-blur-md rotate-45 shadow-[0_0_30px_rgba(64,255,175,0.3)]" />
-                        <div className="absolute inset-2 border border-white/30 rounded-full border-dashed animate-spin-slow" style={{ animationDirection: 'reverse' }} />
-                        <div className="absolute inset-6 bg-gradient-to-tr from-ritual to-purple-500 rounded-lg mix-blend-overlay shadow-[inset_0_0_20px_rgba(255,255,255,0.5)]" />
-                        <div className="absolute inset-4 border border-ritual/60 rounded-full rotate-[60deg] skew-x-12" />
-                        <div className="absolute inset-4 border border-purple-500/60 rounded-full -rotate-[60deg] skew-y-12" />
-                      </motion.div>
+                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
                     )}
-
-                    {/* Ground Reflector */}
-                    <div className="absolute bottom-0 inset-x-0 h-1/2 bg-gradient-to-t from-[#091510] via-[#091510]/80 to-transparent" />
+                      </div>
+                    </div>
                   </div>
                </div>
 
                {/* Bottom Bar */}
-               <div className="bg-[#111A15] p-3 rounded-b-xl rounded-t flex items-center gap-3 border border-white/5 relative z-20">
-                 <div className="w-10 h-10 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
-                   <RitualLogo className="w-6 h-6 text-ritual" />
+               <div className="p-0 m-3 mt-0 pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
+                 <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
+                   <RitualLogo className="w-10 h-10 text-ritual" />
                  </div>
-                 <div className="flex-1">
-                   <div className="font-bold text-sm text-gray-100 truncate">Real Ones</div>
-                   <div className="text-[10px] text-gray-400">People playing the long game.</div>
+                 <div className="flex-1 pb-2">
+                   <div className="font-bold text-lg text-gray-100 truncate pb-1">{getArchetype(profile?.username || '').title}</div>
+                   <div className="text-sm text-gray-400">{getArchetype(profile?.username || '').subtitle}</div>
                  </div>
+               </div>
+
+               {/* Ritual Card text in bottom left */}
+               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">
+                 RITUAL CARD
+               </div>
+
+               {/* Wave 1 text in bottom right, aligned with Ritual Card */}
+               <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
+                 <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
+                 <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
+               </div>
                </div>
              </div>
 
              {/* Dynamic Glare Overlay */}
-             <div 
+             <div
                className="absolute inset-0 mix-blend-color-dodge opacity-60 pointer-events-none z-30 transition-opacity duration-300"
                style={{
                  background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.6) 0%, transparent 50%)`,
@@ -219,7 +270,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
              />
 
              {/* Holographic Shine & Pattern Layer */}
-             <div 
+             <div
                className="absolute inset-0 mix-blend-screen pointer-events-none z-40 transition-opacity duration-300"
                style={{
                  backgroundImage: `linear-gradient(115deg, transparent 20%, rgba(64,255,175,0.4) 30%, rgba(255,255,255,0.7) 40%, transparent 50%)`,
@@ -228,24 +279,73 @@ const Card3D = ({ step, profile, onReset, triggerDownload }: { step: 'input' | '
                  opacity: isRevealed ? glare.alpha * 0.8 : 0
                }}
              />
-             
-             {/* Repeating Foil Foil Pattern */}
-             <div 
-                className="absolute inset-0 pointer-events-none z-30 opacity-[0.05] mix-blend-plus-lighter"
-                style={{
-                  backgroundImage: holographicPattern,
-                  backgroundPosition: `${glare.x / 4}% ${glare.y / 4}%`
-                }}
-             />
 
-             {/* Wave 1 Golden/Metallic Seal overlapping bottom right */}
-             <div className="absolute -bottom-3 -right-3 z-50 bg-[#E2E8F0] text-[#0F172A] rounded-full w-14 h-14 flex flex-col items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.6),inset_0_2px_4px_white] border-[3px] border-[#111A15] transform rotate-12">
-                <span className="text-[9px] font-black leading-none mt-1 uppercase tracking-widest">Wave</span>
-                <span className="text-2xl font-black leading-none pb-0.5 border-t border-black/10 w-10 text-center mt-0.5">1</span>
-             </div>
           </div>
         </div>
       </motion.div>
+      </div>
+
+      {/* Hidden flat card for screenshot Ã¢â‚¬â€ zero-size wrapper keeps it invisible but fully rendered */}
+      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+        <div
+          ref={flatCardRef}
+          style={{
+            position: 'relative',
+            width: '360px',
+            height: '500px',
+            borderRadius: '24px',
+            overflow: 'hidden',
+          }}
+        >
+        {/* TCG Border */}
+        <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
+          background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+        }} />
+        {/* Inner area */}
+        <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0A1215] via-[#1a3d30] to-[#0A1215]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
+          <div className="p-3 h-full flex flex-col relative z-20">
+            {/* Top Bar */}
+            <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
+              <span className="font-bold text-lg text-gray-200 truncate pr-4 relative z-10">{profile?.displayName || 'Your Username'}</span>
+              <Sparkles className="w-5 h-5 text-ritual shrink-0 relative z-10" />
+            </div>
+            {/* Avatar */}
+            <div className="flex-1 mt-3 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center" style={{ minHeight: '280px' }}>
+              <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510]">
+                <div className="absolute inset-0 rounded-xl p-[8px]" style={{
+                  background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+                }} />
+                <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    {profile?.avatar && (
+                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Bottom Bar */}
+            <div className="p-0 m-3 mt-0 pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
+              <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
+                <RitualLogo className="w-10 h-10 text-ritual" />
+              </div>
+              <div className="flex-1 pb-2">
+                <div className="font-bold text-lg text-gray-100 truncate pb-1">{getArchetype(profile?.username || '').title}</div>
+                <div className="text-sm text-gray-400">{getArchetype(profile?.username || '').subtitle}</div>
+              </div>
+            </div>
+            <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">RITUAL CARD</div>
+            <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
+              <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
+              <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
     </div>
   );
 };
@@ -263,6 +363,7 @@ export default function App() {
   const [profile, setProfile] = useState<TwitterProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [triggerDownload, setTriggerDownload] = useState(0);
+  const [triggerCopy, setTriggerCopy] = useState(0);
   const formSectionRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -283,9 +384,9 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen bg-background text-white font-sans overflow-x-hidden selection:bg-ritual/30">
-      {/* Background Ambience — absolute so grid scrolls away with page */}
+      {/* Background Ambience Ã¢â‚¬â€ absolute so grid scrolls away with page */}
       <div className="absolute top-0 left-0 right-0 h-[90vh] bg-pattern z-0" />
-      <div className="absolute top-0 left-0 right-0 h-[70vh] bg-[radial-gradient(ellipse_at_top,rgba(64,255,175,0.06)_0%,transparent_70%)] pointer-events-none z-0" />
+      <div className="absolute top-0 left-0 right-0 h-[70vh] bg-[radial-gradient(ellipse_at_top,rgba(64,255,175,0.06)_0%,transparent_80%)] pointer-events-none z-0" />
 
       {/* Sparkle Background (when card revealed) */}
       {step === 'card' && (
@@ -306,39 +407,38 @@ export default function App() {
       )}
 
       {/* Navbar */}
-      <nav className="relative z-10 max-w-6xl mx-auto px-6 py-6 flex items-center justify-center">
-        <div className="flex items-center gap-3">
-          <RitualLogo className="w-7 h-7 text-ritual" />
-          <span className="text-xl font-bold tracking-[0.2em] uppercase">RITUAL</span>
-        </div>
+      <nav className="relative z-10 max-w-6xl mx-auto my-0 px-5 pt-5 pb-0 flex items-center justify-center">
+        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-20 select-none" draggable={false} />
       </nav>
 
       {/* Main Content */}
-      <main className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-14 pb-24 flex flex-col items-center justify-center min-h-[70vh]">
+      <main className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-5 pb-24 flex flex-col items-center justify-center min-h-[70vh]">
 
         {/* Floating Ambient Light Orbs */}
         <div className="absolute top-1/4 left-[10%] w-3 h-3 bg-white shadow-[0_0_20px_#FFF] rounded-full animate-pulse-slow" />
         <div className="absolute bottom-1/3 right-[15%] w-4 h-4 bg-ritual shadow-[0_0_30px_#40FFAF] rounded-full animate-pulse-slow" style={{ animationDelay: '2s' }} />
 
         {/* Card + Action Buttons Container */}
-        <div className="flex items-center justify-center gap-8">
-          {/* The Card Hero Model View */}
-          <div className="perspective-1000 z-20">
+        {/* Mobile: flex-col (buttons below card). Desktop: relative (buttons absolute right) */}
+        <div className="flex flex-col items-center gap-4 sm:relative sm:block">
+          {/* The Card Hero Model View - Always centered */}
+          <div className="flex justify-center perspective-1000 z-20">
             <Card3D
               step={step}
               profile={profile}
               onReset={() => { setStep('input'); setHandle(''); setProfile(null); }}
               triggerDownload={triggerDownload}
+              triggerCopy={triggerCopy}
             />
           </div>
 
-          {/* Action Icons (right side, only show when card is revealed) */}
+          {/* Action Icons Ã¢â‚¬â€ horizontal row on mobile, vertical column on desktop (right of card) */}
           {step === 'card' && (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.5 }}
-              className="flex flex-col gap-3"
+              className="flex flex-row gap-3 sm:flex-col sm:absolute sm:top-1/2 sm:-translate-y-1/2 sm:left-1/2 sm:translate-x-[200px]"
             >
               <button
                 onClick={() => {
@@ -353,9 +453,9 @@ export default function App() {
                 <Share2 className="w-5 h-5 text-gray-300 group-hover:text-ritual" />
               </button>
               <button
-                onClick={() => navigator.clipboard.writeText(window.location.href)}
+                onClick={() => setTriggerCopy(prev => prev + 1)}
                 className="w-12 h-12 rounded-xl bg-white/10 hover:bg-ritual/20 border border-white/10 hover:border-ritual/40 flex items-center justify-center transition-all group"
-                title="Copy Link"
+                title="Copy Card Image"
               >
                 <Clipboard className="w-5 h-5 text-gray-300 group-hover:text-ritual" />
               </button>
@@ -366,42 +466,35 @@ export default function App() {
               >
                 <Download className="w-5 h-5 text-gray-300 group-hover:text-ritual" />
               </button>
-              <button
-                onClick={() => setTriggerDownload(prev => prev + 1)}
-                className="w-12 h-12 rounded-xl bg-white/10 hover:bg-ritual/20 border border-white/10 hover:border-ritual/40 flex items-center justify-center transition-all group"
-                title="Download Image"
-              >
-                <ImageDown className="w-5 h-5 text-gray-300 group-hover:text-ritual" />
-              </button>
             </motion.div>
           )}
         </div>
 
         {/* Persistent Title Section - Logo Image, Always Below Card */}
-        <div className="mt-10 mb-8 flex flex-col items-center">
+        <div className="mt-16 mb-8 flex flex-col items-center">
           <img
             src="/ritual-cards-logo.png"
-            alt="RITUAL CARDS WAVE • 1"
-            className="w-full max-w-[600px] select-none mb-2"
+            alt="RITUAL CARDS WAVE Ã¢â‚¬Â¢ 1"
+            className="w-full max-w-[450px] select-none mb-2"
             style={{ mixBlendMode: 'screen' }}
             draggable={false}
           />
           {/* Quote */}
-          <p className="text-[#94A3B8] mt-0 italic text-base tracking-wide">
-            "A token of appreciation for Crypto Twitter"
+          <p className="text-[#DDDDDD] italic text-xl tracking-wide">
+            "A token of appreciation for Ritual Contributor"
           </p>
         </div>
 
-        {/* View Your Card CTA — shown only on input step */}
+        {/* View Your Card CTA Ã¢â‚¬â€ shown only on input step */}
         {step === 'input' && (
           <div className="flex flex-col items-center gap-4 mb-10">
             <button
               onClick={() => formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="px-12 bg-white text-background font-black text-[1.1rem] tracking-wide py-4 rounded-2xl hover:bg-ritual shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(64,255,175,0.3)] transition-all transform active:scale-[0.98]"
+              className="px-6 bg-ritual text-background font-black text-[1.1rem] tracking-wide py-4 rounded-2xl hover:bg-white shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(64,255,175,0.3)] transition-all transform active:scale-[0.98]"
             >
               View Your Card
             </button>
-            <p className="text-gray-400 text-base">Check your eligibility below! Account linking not required.</p>
+            <p className="text-gray-400 text-xl">Check your eligibility below! Account linking not required.</p>
           </div>
         )}
 
@@ -423,7 +516,7 @@ export default function App() {
                 {step === 'card' && (
                   <div className="text-gray-400 text-lg mb-2">
                     Signed in as <span className="text-ritual font-bold">@{profile?.username || handle}</span>
-                    <p className="text-xs text-gray-500 mt-1">Click card to flip • Use icons to share</p>
+                    <p className="text-xs text-gray-500 mt-1">Click card to flip | Use icons to share</p>
                   </div>
                 )}
 
@@ -449,7 +542,7 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={isLoading || !handle.trim()}
-                    className="absolute right-2 top-2 bottom-2 aspect-square bg-white text-background rounded-xl flex items-center justify-center hover:bg-ritual transition-colors duration-300 shadow-md disabled:opacity-50 disabled:hover:bg-white"
+                    className="absolute right-2 top-2 bottom-2 aspect-square bg-ritual text-background rounded-xl flex items-center justify-center hover:bg-white transition-colors duration-300 shadow-md disabled:opacity-50 disabled:hover:bg-white"
                   >
                     {isLoading ? (
                       <Loader2 className="w-6 h-6 stroke-[3px] animate-spin" />
@@ -478,7 +571,7 @@ export default function App() {
                 </div>
                 <button
                   onClick={handleReveal}
-                  className="w-full bg-white text-background font-black text-[1.1rem] tracking-wide py-4 rounded-2xl hover:bg-ritual shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(64,255,175,0.3)] transition-all transform active:scale-[0.98]"
+                  className="px-6 bg-ritual text-background font-black text-[1.1rem] tracking-wide py-4 rounded-2xl hover:bg-ritual shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_40px_rgba(64,255,175,0.3)] transition-all transform active:scale-[0.98]"
                 >
                   View Your Card
                 </button>
@@ -499,7 +592,7 @@ export default function App() {
         <div className="space-y-4">
           {[
             { q: "What are Ritual Cards?", a: "Ritual Cards are a token of appreciation for active members of the community, presented as a highly interactive digital collectible in Wave 1." },
-            { q: "Who is eligible for Wave 1?", a: "Active participants, early contributors, and the long-term believers who have engaged with the ecosystem continually on Crypto Twitter." },
+            { q: "Who is eligible for Wave 1?", a: "Active participants, early contributors, and the long-term believers who have engaged with the ecosystem continually on Ritual Forge." },
             { q: "How do I claim my card?", a: "Simply enter your handle above to check eligibility. If eligible, your unique card will be revealed instantly in your browser." }
           ].map((faq, i) => (
             <div 
@@ -537,10 +630,22 @@ export default function App() {
         {/* Footer Text */}
         <div className="mt-24 text-center pb-8 border-t border-white/10 pt-8 flex flex-col items-center">
             <RitualLogo className="w-8 h-8 text-gray-500 mb-4" />
-            <p className="text-gray-500 text-sm mt-3">© {new Date().getFullYear()} Ritual Cards. Not a speculative asset.</p>
+            <p className="text-gray-500 text-sm mt-3">&copy; {new Date().getFullYear()} Ritual Cards.</p>
+            <p className="text-gray-600 text-xs mt-1 flex items-center gap-2">
+              Built by Decka-chan
+              <a href="https://x.com/decka_chan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="Twitter / X">
+                <Twitter className="w-3.5 h-3.5" />
+              </a>
+              <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="GitHub">
+                <Github className="w-3.5 h-3.5" />
+              </a>
+            </p>
+            <p className="text-gray-700 text-xs mt-1 tracking-widest uppercase">Just For Fun</p>
         </div>
       </section>
       </main>
     </div>
   );
 }
+
+

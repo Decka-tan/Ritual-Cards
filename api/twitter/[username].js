@@ -1,14 +1,5 @@
-import express from 'express';
-import cors from 'cors';
-
-const app = express();
-const PORT = 3001;
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/api/twitter/:username', async (req, res) => {
-  const { username } = req.params;
+export default async function handler(req, res) {
+  const { username } = req.query;
   const cleanUsername = username.replace('@', '').trim();
 
   let displayName = cleanUsername;
@@ -60,12 +51,12 @@ app.get('/api/twitter/:username', async (req, res) => {
       }
 
       // Extract Avatar URL from Nitter HTML
-      const avatarMatch = html.match(/<img[^>]+class="profile-card-avatar"[^>]+src="([^"]+)"/i) 
+      const avatarMatch = html.match(/<img[^>]+class="profile-card-avatar"[^>]+src="([^"]+)"/i)
                        || html.match(/<a class="profile-card-avatar"[^>]*>\s*<img[^>]+src="([^"]+)"/i);
-                       
+
       if (avatarMatch && avatarMatch[1]) {
         const rawAvatarUrl = `${instance}${avatarMatch[1]}`;
-        
+
         // DOWNLOAD the image immediately on the server so Nitter cannot block the frontend browser with hotlink protection!
         try {
            const imgCtrl = new AbortController();
@@ -75,7 +66,7 @@ app.get('/api/twitter/:username', async (req, res) => {
               signal: imgCtrl.signal
            });
            clearTimeout(imgT);
-           
+
            if (imgRes.ok) {
               const arrayBuffer = await imgRes.arrayBuffer();
               const buffer = Buffer.from(arrayBuffer);
@@ -168,14 +159,10 @@ app.get('/api/twitter/:username', async (req, res) => {
       }
     }
   }
-  
-  res.json({ 
-    avatar: avatarBase64, 
-    displayName, 
-    username: cleanUsername 
-  });
-});
 
-app.listen(PORT, () => {
-  console.log(`🚀 Proxy server running on http://localhost:${PORT}`);
-});
+  res.status(200).json({
+    avatar: avatarBase64,
+    displayName,
+    username: cleanUsername
+  });
+}
