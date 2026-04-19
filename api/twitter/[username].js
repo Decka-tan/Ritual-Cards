@@ -5,23 +5,39 @@ export default async function handler(req, res) {
   let displayName = cleanUsername;
   let avatarBase64 = null;
 
-  // ── Primary: Twitter's public Follow Button API (no auth required) ──
+  console.log(`[twitter] Fetching profile for: ${cleanUsername}`);
+
+  // ── 1. Twitter's public Follow Button info API ──
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 5000);
     const twRes = await fetch(
       `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`,
-      { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: ctrl.signal }
+      { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RitualCards/1.0)' }, signal: ctrl.signal }
     );
     clearTimeout(t);
+    console.log(`[twitter] CDN API status: ${twRes.status}`);
     if (twRes.ok) {
-      const data = await twRes.json();
+      const text = await twRes.text();
+      console.log(`[twitter] CDN API raw response: ${text.slice(0, 200)}`);
+      const data = JSON.parse(text);
+      // Response can be array or object keyed by screen_name
       if (Array.isArray(data) && data[0]?.name) {
         displayName = data[0].name;
+        console.log(`[twitter] displayName from CDN API (array): ${displayName}`);
+      } else if (data && typeof data === 'object') {
+        const user = Object.values(data)[0];
+        if (user?.name) {
+          displayName = user.name;
+          console.log(`[twitter] displayName from CDN API (object): ${displayName}`);
+        }
       }
     }
-  } catch (_) {}
+  } catch (e) {
+    console.log(`[twitter] CDN API failed: ${e.message}`);
+  }
 
+  // ── 2. Nitter scraping (for avatar + displayName fallback) ──
   const nitterInstances = [
     'https://nitter.net',
     'https://nitter.poast.org',
@@ -43,12 +59,13 @@ export default async function handler(req, res) {
       });
       clearTimeout(t);
 
+      console.log(`[twitter] Nitter ${instance} status: ${response.status}`);
       if (!response.ok) continue;
 
       const html = await response.text();
-      if (html.length < 500) continue;
+      if (html.length < 500) { console.log(`[twitter] Nitter HTML too short`); continue; }
 
-      // Only scrape display name from nitter if Twitter API didn't get it
+      // Only grab displayName from nitter if Twitter CDN API didn't get it
       if (displayName === cleanUsername) {
         const namePatterns = [
           /<title[^>]*>(.+?)\s*\(@[^)]+\)/,
@@ -64,125 +81,84 @@ export default async function handler(req, res) {
               .replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
             if (name && name !== cleanUsername) {
               displayName = name;
+              console.log(`[twitter] displayName from Nitter: ${displayName}`);
               break;
             }
           }
         }
       }
 
-      // Extract Avatar URL from Nitter HTML
+      // Extract Avatar from Nitter HTML
       const avatarMatch = html.match(/<img[^>]+class="profile-card-avatar"[^>]+src="([^"]+)"/i)
                        || html.match(/<a class="profile-card-avatar"[^>]*>\s*<img[^>]+src="([^"]+)"/i);
 
-      if (avatarMatch && avatarMatch[1]) {
+      if (avatarMatch?.[1]) {
         const rawAvatarUrl = `${instance}${avatarMatch[1]}`;
-
-        // DOWNLOAD the image immediately on the server so Nitter cannot block the frontend browser with hotlink protection!
         try {
-           const imgCtrl = new AbortController();
-           const imgT = setTimeout(() => imgCtrl.abort(), 6000);
-           const imgRes = await fetch(rawAvatarUrl, {
-              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': instance },
-              signal: imgCtrl.signal
-           });
-           clearTimeout(imgT);
-
-           if (imgRes.ok) {
-              const arrayBuffer = await imgRes.arrayBuffer();
-              const buffer = Buffer.from(arrayBuffer);
-              const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
-              avatarBase64 = `data:${contentType};base64,${buffer.toString('base64')}`;
-           }
-        } catch(e) {}
+          const imgCtrl = new AbortController();
+          const imgT = setTimeout(() => imgCtrl.abort(), 6000);
+          const imgRes = await fetch(rawAvatarUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Referer': instance },
+            signal: imgCtrl.signal,
+          });
+          clearTimeout(imgT);
+          if (imgRes.ok) {
+            const arrayBuffer = await imgRes.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+            avatarBase64 = `data:${contentType};base64,${buffer.toString('base64')}`;
+            console.log(`[twitter] Avatar fetched from Nitter (${buffer.length} bytes)`);
+          }
+        } catch (e) {
+          console.log(`[twitter] Avatar download failed: ${e.message}`);
+        }
       }
 
       if (displayName !== cleanUsername || avatarBase64) break;
-    } catch (err) { continue; }
+    } catch (err) {
+      console.log(`[twitter] Nitter instance error: ${err.message}`);
+      continue;
+    }
   }
 
-  // Helper function to validate image response
-  const isValidImage = (contentType, buffer) => {
-    if (!contentType || !contentType.startsWith('image/')) return false;
-
-    // Check for valid image signatures (magic numbers)
-    const firstBytes = buffer.slice(0, 4);
-    const hex = firstBytes.toString('hex');
-
-    // PNG: 89 50 4E 47
-    // JPEG: FF D8 FF
-    // GIF: 47 49 46 38
-    // WebP: 52 49 46 46
-    const validSignatures = [
-      '89504e47', // PNG
-      'ffd8',     // JPEG
-      '47494638', // GIF
-      '52494646'  // WebP
-    ];
-
-    return validSignatures.some(sig => hex.startsWith(sig));
-  };
-
-  // Try multiple avatar services with better fallback logic
+  // ── 3. Avatar fallback services ──
   if (!avatarBase64) {
     const avatarServices = [
-      {
-        url: `https://unavatar.io/twitter/${cleanUsername}`,
-        name: 'unavatar-twitter'
-      },
-      {
-        url: `https://i.pravatar.cc/150?u=${cleanUsername}`,
-        name: 'pravatar-placeholder'
-      },
-      {
-        url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanUsername}`,
-        name: 'dicebear-avatar'
-      }
+      { url: `https://unavatar.io/twitter/${cleanUsername}`, name: 'unavatar' },
+      { url: `https://i.pravatar.cc/150?u=${cleanUsername}`, name: 'pravatar' },
     ];
 
     for (const service of avatarServices) {
       try {
-        console.log(`Trying ${service.name}...`);
-
         const ctrl = new AbortController();
         const t = setTimeout(() => ctrl.abort(), 5000);
-
         const avatarRes = await fetch(service.url, {
-          method: 'GET',
           redirect: 'follow',
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'image/*'
-          },
-          signal: ctrl.signal
+          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'image/*' },
+          signal: ctrl.signal,
         });
-
         clearTimeout(t);
-
         if (avatarRes.ok) {
           const contentType = avatarRes.headers.get('content-type') || '';
-          const arrayBuffer = await avatarRes.arrayBuffer();
-          const buffer = Buffer.from(arrayBuffer);
-
-          // For non-image content types (like SVG), still use them
           if (contentType.startsWith('image/') || contentType.includes('svg')) {
+            const arrayBuffer = await avatarRes.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
             avatarBase64 = `data:${contentType};base64,${buffer.toString('base64')}`;
-            console.log(`✓ Avatar fetched from ${service.name}`);
+            console.log(`[twitter] Avatar from ${service.name}`);
             break;
-          } else {
-            console.log(`✗ ${service.name} returned non-image content: ${contentType}`);
           }
-        } else {
-          console.log(`✗ ${service.name} returned status: ${avatarRes.status}`);
         }
-      } catch (error) {
-        console.log(`✗ ${service.name} failed:`, error.message);
+      } catch (e) {
+        console.log(`[twitter] ${service.name} failed: ${e.message}`);
       }
     }
   }
 
+  console.log(`[twitter] Final → displayName: ${displayName}, avatar: ${avatarBase64 ? 'yes' : 'no'}`);
+
   res.status(200).json({
     avatar: avatarBase64,
     displayName,
-    username: cleanUsername
+    username: cleanUsername,
   });
 }
