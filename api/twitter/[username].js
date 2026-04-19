@@ -38,28 +38,37 @@ export default async function handler(req, res) {
     } catch (e) { console.log(`[twitter] Mastodon API ${instance} failed: ${e.message}`); }
   }
 
-  // ── 2. Twitter Follow Button CDN API ──
+  // ── 2. Twitter Follow Button CDN API (direct + via proxy if blocked) ──
   if (displayName === cleanUsername) {
-    try {
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 5000);
-      const r = await fetch(
-        `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`,
-        { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: ctrl.signal }
-      );
-      clearTimeout(t);
-      console.log(`[twitter] CDN API status: ${r.status}`);
-      if (r.ok) {
-        const text = await r.text();
-        console.log(`[twitter] CDN API raw: ${text.slice(0, 200)}`);
-        const data = JSON.parse(text);
-        const user = Array.isArray(data) ? data[0] : Object.values(data || {})[0];
-        if (user?.name && user.name !== cleanUsername) {
-          displayName = user.name;
-          console.log(`[twitter] displayName from CDN API: ${displayName}`);
+    const cdnUrl = `https://cdn.syndication.twimg.com/widgets/followbutton/info.json?screen_names=${cleanUsername}`;
+    const attempts = [
+      // Direct call
+      { url: cdnUrl, headers: { 'User-Agent': 'Mozilla/5.0', 'Accept-Encoding': 'identity' } },
+      // Via AllOrigins proxy (different IP, bypasses Vercel block)
+      { url: `https://api.allorigins.win/raw?url=${encodeURIComponent(cdnUrl)}`, headers: { 'User-Agent': 'Mozilla/5.0' } },
+    ];
+    for (const attempt of attempts) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 6000);
+        const r = await fetch(attempt.url, { headers: attempt.headers, signal: ctrl.signal });
+        clearTimeout(t);
+        console.log(`[twitter] CDN attempt ${attempt.url.slice(0,40)}: ${r.status}`);
+        if (r.ok) {
+          const text = await r.text();
+          console.log(`[twitter] CDN body (${text.length} chars): ${text.slice(0, 100)}`);
+          if (text.trim().length > 0) {
+            const data = JSON.parse(text);
+            const user = Array.isArray(data) ? data[0] : Object.values(data || {})[0];
+            if (user?.name && user.name !== cleanUsername) {
+              displayName = user.name;
+              console.log(`[twitter] displayName from CDN: ${displayName}`);
+              break;
+            }
+          }
         }
-      }
-    } catch (e) { console.log(`[twitter] CDN API failed: ${e.message}`); }
+      } catch (e) { console.log(`[twitter] CDN attempt failed: ${e.message}`); }
+    }
   }
 
   // ── 3. Nitter RSS (structured, lighter than HTML) ──
