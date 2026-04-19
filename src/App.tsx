@@ -90,7 +90,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     void flatCardRef.current.offsetHeight;
 
     // Longer buffer for iPhone/Mobile rendering engines to flush base64 images
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 1000));
 
     return toPng(flatCardRef.current, { 
       pixelRatio: 2, 
@@ -475,12 +475,7 @@ export default function App() {
               className="flex flex-row gap-3 sm:flex-col sm:absolute sm:top-1/2 sm:-translate-y-1/2 sm:left-1/2 sm:translate-x-[200px]"
             >
               <button
-                onClick={() => {
-                  setTriggerDownload(prev => prev + 1);
-                  setTimeout(() => {
-                    window.open(`https://twitter.com/intent/tweet?text=Check%20out%20my%20Ritual%20Card!%20%F0%9F%94%AE%20%23RitualCards%20%23CryptoTwitter&via=RitualCards`, '_blank');
-                  }, 500);
-                }}
+                onClick={handleTwitterShare}
                 className="w-12 h-12 rounded-xl bg-white/10 hover:bg-ritual/20 border border-white/10 hover:border-ritual/40 flex items-center justify-center transition-all group"
                 title="Share to Twitter"
               >
@@ -505,7 +500,7 @@ export default function App() {
         </div>
 
         {/* Persistent Title Section - Logo Image, Always Below Card */}
-        <div className="mt-4 mb-2 flex flex-col items-center">
+        <div className="mt-6 mb-3 flex flex-col items-center">
           <img
             src="/ritual-cards-logo.png"
             alt="RITUAL CARDS WAVE Ã¢â‚¬Â¢ 1"
