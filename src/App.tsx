@@ -12,12 +12,11 @@ const fetchTwitterProfile = async (username: string) => {
       : `https://ritual-twitter-proxy.artelamon.workers.dev/api/twitter/${cleanUsername}?t=${Date.now()}`;
 
     const res = await fetch(apiUrl);
-
     if (res.ok) {
       const data = await res.json();
       return {
-        avatar: data.avatar,
-        displayName: data.displayName || cleanUsername,
+        avatar: data?.avatar || null,
+        displayName: data?.displayName || cleanUsername,
         username: cleanUsername
       };
     }
