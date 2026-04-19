@@ -83,8 +83,14 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       })
     );
     
+    // Wait for fonts
+    await document.fonts.ready;
+    
+    // Force layout reflow
+    void flatCardRef.current.offsetHeight;
+
     // Small extra buffer for mobile rendering engines
-    await new Promise(r => setTimeout(r, 100));
+    await new Promise(r => setTimeout(r, 200));
 
     return toPng(flatCardRef.current, { 
       pixelRatio: 2, 
@@ -305,7 +311,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       </div>
 
       {/* Hidden flat card for screenshot Ã¢â‚¬â€ zero-size wrapper keeps it invisible but fully rendered */}
-      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+      <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '360px', height: '500px', overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
         <div
           ref={flatCardRef}
           style={{
