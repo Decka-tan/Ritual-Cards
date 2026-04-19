@@ -162,7 +162,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
         </div>
       </div>
 
-      <div className="perspective-1000 w-[360px] h-[500px]">
+      <div className="perspective-1000 w-[310px] h-[430px] sm:w-[360px] sm:h-[500px]">
       <motion.div
         ref={cardRef}
         onMouseMove={handleMouseMove}
@@ -178,7 +178,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       >
         <div className="w-full h-full relative transform-3d">
           {/* Card Back (Always rendered, visible when not flipped) */}
-          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center">
+          <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center" style={{ transform: 'translateZ(-1px)' }}>
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.15)_0%,transparent_70%)]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-spin-slow">
               <div className="w-full h-full bg-[conic-gradient(from_0deg,transparent,rgba(64,255,175,0.3),transparent,rgba(7,115,69,0.3),transparent)] blur-xl" />
@@ -196,7 +196,7 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
           </div>
 
           {/* Card Front (Flip side) */}
-          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden">
+          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden" style={{ transform: 'rotateY(180deg) translateZ(1px)' }}>
              {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
              <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
                background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
@@ -472,7 +472,7 @@ export default function App() {
         </div>
 
         {/* Persistent Title Section - Logo Image, Always Below Card */}
-        <div className="mt-16 mb-8 flex flex-col items-center">
+        <div className="mt-8 mb-4 flex flex-col items-center">
           <img
             src="/ritual-cards-logo.png"
             alt="RITUAL CARDS WAVE Ã¢â‚¬Â¢ 1"
