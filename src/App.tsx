@@ -263,11 +263,10 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                     }} />
                     <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                       <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile?.username || 'avatar'} className="w-full h-full object-cover" />
-                    ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
-                    )}
+                    <div 
+                      className="w-full h-full bg-cover bg-center" 
+                      style={{ backgroundImage: `url(${profile?.avatar || '/blank-avatar.png'})` }}
+                    />
                       </div>
                     </div>
                   </div>
@@ -358,11 +357,10 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
                 }} />
                 <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" />
-                    ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
-                    )}
+                    <div 
+                      className="w-full h-full bg-cover bg-center" 
+                      style={{ backgroundImage: `url(${profile?.avatar || '/blank-avatar.png'})` }}
+                    />
                   </div>
                 </div>
               </div>
