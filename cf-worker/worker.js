@@ -85,6 +85,41 @@ export default {
     let avatarBase64 = null;
 
     console.log(`[cf-worker] Fetching: ${cleanUsername}`);
+    
+    // ── 0. High-Reliability VxTwitter API ──
+    try {
+      const vxReq = await fetch(`https://api.vxtwitter.com/${cleanUsername}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (vxReq.ok) {
+        const vxData = await vxReq.json();
+        if (vxData?.name) {
+          displayName = vxData.name;
+        }
+        if (vxData?.profile_image_url) {
+          // Fetch the image from twimg to get base64
+          const imgUrl = vxData.profile_image_url.replace('_normal', '_400x400'); // get better quality
+          const imgR = await fetch(imgUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            signal: AbortSignal.timeout(5000),
+          });
+          if (imgR.ok) {
+            const buf = await imgR.arrayBuffer();
+            avatarBase64 = `data:${imgR.headers.get('content-type') || 'image/jpeg'};base64,${toBase64(buf)}`;
+          }
+        }
+      }
+    } catch (e) {
+      console.log(`[cf-worker] VxTwitter failed: ${e.message}`);
+    }
+
+    // Short-circuit if vxtwitter got everything
+    if (avatarBase64 && displayName !== cleanUsername) {
+      return new Response(JSON.stringify({ avatar: avatarBase64, displayName, username: cleanUsername }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
 
     const nitterInstances = [
       'https://nitter.poast.org',
