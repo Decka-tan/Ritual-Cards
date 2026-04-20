@@ -88,9 +88,13 @@ export default {
 
     const nitterInstances = [
       'https://nitter.poast.org',
+      'https://nitter.moomoo.me',
+      'https://nitter.projectsegfau.lt',
       'https://nitter.privacydev.net',
-      'https://nitter.net',
-      'https://nitter.cz',
+      'https://nitter.perennialte.ch',
+      'https://nitter.mint.lgbt',
+      'https://nitter.rocks',
+      'https://nitter.no-logs.com',
     ];
 
     // ── 1. Nitter Mastodon-compatible JSON API ──
@@ -187,12 +191,12 @@ export default {
       } catch (e) {}
     }
 
-    // ── 5. Avatar fallback — unavatar.io ──
+    // ── 5. Avatar fallback ──
     if (!avatarBase64) {
       try {
         const r = await fetch(`https://unavatar.io/twitter/${cleanUsername}`, {
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'image/*' },
-          signal: AbortSignal.timeout(5000), redirect: 'follow',
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(8000), redirect: 'follow',
         });
         if (r.ok) {
           const ct = r.headers.get('content-type') || '';
@@ -200,7 +204,9 @@ export default {
             avatarBase64 = `data:${ct};base64,${toBase64(await r.arrayBuffer())}`;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error(`[cf-worker] Fallback failed: ${e.message}`);
+      }
     }
 
     return new Response(JSON.stringify({ avatar: avatarBase64, displayName, username: cleanUsername }), {
