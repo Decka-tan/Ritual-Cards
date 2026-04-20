@@ -34,7 +34,7 @@ const fetchTwitterProfile = async (username: string) => {
 };
 
 const RitualLogo = ({ className }: { className?: string }) => (
-  <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} crossOrigin="anonymous" />
+  <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} />
 );
 
 const ARCHETYPES = [
