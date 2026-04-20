@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github } from 'lucide-react';
 import { toPng, toBlob } from 'html-to-image';
+import { LOGO_BASE64 } from './logoBase64';
 
 // Fetch profile from API (works with both local server and Vercel serverless)
 const fetchTwitterProfile = async (username: string) => {
@@ -34,7 +35,7 @@ const fetchTwitterProfile = async (username: string) => {
 };
 
 const RitualLogo = ({ className }: { className?: string }) => (
-  <img src="/Logo_RItual_White.png" alt="Ritual Logo" className={className} />
+  <img src={LOGO_BASE64} alt="Ritual Logo" className={className} />
 );
 
 const ARCHETYPES = [
