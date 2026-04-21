@@ -138,106 +138,19 @@ const getArchetype = (username: string) => {
   return ARCHETYPES[hash % ARCHETYPES.length];
 };
 
-const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number, triggerCopy?: number }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const cardFrontRef = useRef<HTMLDivElement>(null);
-  const flatCardRef = useRef<HTMLDivElement>(null);
-  const screenshotWrapperRef = useRef<HTMLDivElement>(null);
+const RitualCardInteractive = React.forwardRef<HTMLDivElement, { 
+  profile: TwitterProfile | null, 
+  isRevealed?: boolean,
+  initialFlipped?: boolean,
+  frontRef?: React.Ref<HTMLDivElement>
+}>(({ profile, isRevealed = true, initialFlipped = false, frontRef }, ref) => {
   const [tilt, setTilt] = useState({ x: 0, y: 0, scale: 1 });
   const [glare, setGlare] = useState({ x: 50, y: 50, alpha: 0 });
-  const [isFlipped, setIsFlipped] = useState(false);
-  const isRevealed = step === 'card';
-
-  const captureCardFront = async (): Promise<string | null> => {
-    if (!flatCardRef.current) return null;
-    
-    // Ensure images are loaded before capture
-    const images = flatCardRef.current.getElementsByTagName('img');
-    await Promise.all(
-      Array.from(images).map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      })
-    );
-    
-    // Wait for fonts and high-res assets
-    await document.fonts.ready;
-    
-    // Force layout reflow
-    void flatCardRef.current.offsetHeight;
-
-    // Longer buffer for iPhone/Mobile rendering engines to flush base64 images
-    await new Promise(r => setTimeout(r, 1000));
-
-    // Double-pass capture: Calling it twice is a known fix for iOS Safari/WebKit 
-    // where images/fonts don't render on the first pass through foreignObject.
-    await toBlob(flatCardRef.current, { pixelRatio: 1, cacheBust: true });
-    
-    const blob = await toBlob(flatCardRef.current, { 
-      pixelRatio: 2, 
-      cacheBust: true
-    });
-    
-    if (!blob) return null;
-    return URL.createObjectURL(blob);
-  };
-
-
-  const handleDownloadImage = async () => {
-    try {
-      const url = await captureCardFront();
-      if (!url) return;
-      const link = document.createElement('a');
-      link.download = `ritual-card-${profile?.username || 'wave1'}.png`;
-      link.href = url;
-      link.click();
-      // Clean up the object URL after a short delay
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } catch (error) {
-      console.error('Failed to download image:', error);
-      alert('Failed to download card image. Please try again.');
-    }
-  };
-
-  const handleCopyToClipboard = async () => {
-    try {
-      const url = await captureCardFront();
-      if (!url) return;
-      const response = await fetch(url);
-      const blob = await response.blob();
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      URL.revokeObjectURL(url);
-      alert('Card copied to clipboard!');
-    } catch (error) {
-      console.error('Failed to copy image:', error);
-      alert('Copy failed Ã¢â‚¬â€ try the download button instead.');
-    }
-  };
-
-  // Trigger download when prop changes
-  React.useEffect(() => {
-    if (triggerDownload && triggerDownload > 0) {
-      handleDownloadImage();
-    }
-  }, [triggerDownload]);
-
-  // Trigger copy when prop changes
-  React.useEffect(() => {
-    if (triggerCopy && triggerCopy > 0) {
-      handleCopyToClipboard();
-    }
-  }, [triggerCopy]);
-
-
+  const [isFlipped, setIsFlipped] = useState(initialFlipped);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isRevealed) return;
-    if (!cardRef.current) return;
-
-    const rect = cardRef.current.getBoundingClientRect();
+    const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -267,21 +180,10 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
     }
   };
 
-  const holographicPattern = `url("data:image/svg+xml,%3Csvg width='30' height='30' viewBox='0 0 100 100' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform='translate(50, 50) rotate(45) translate(-50, -50)'%3E%3Cpath d='M25 25h15v35h-15zM60 40h15v35h-15zM25 25h50v15h-50zM25 60h50v15h-50z' fill='white' opacity='0.5'/%3E%3C/g%3E%3C/svg%3E")`;
-
   return (
-    <div ref={screenshotWrapperRef} className="relative inline-block">
-      {/* Hidden branding for screenshot */}
-      <div className="absolute -bottom-16 left-0 right-0 flex items-center justify-center opacity-0 pointer-events-none">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-ritual tracking-widest">RITUAL CARDS</div>
-          <div className="text-sm text-gray-400">WAVE • 1</div>
-        </div>
-      </div>
-
-      <div className="perspective-1000 w-[310px] h-[430px] sm:w-[360px] sm:h-[500px]">
+    <div className="perspective-1000 w-[310px] h-[430px] sm:w-[360px] sm:h-[500px]">
       <motion.div
-        ref={cardRef}
+        ref={ref}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
@@ -294,17 +196,15 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
         className="w-full h-full transform-3d cursor-pointer relative"
       >
         <div className="w-full h-full relative transform-3d">
-          {/* Card Back (Always rendered, visible when not flipped) */}
+          {/* Card Back */}
           <div className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_50px_rgba(64,255,175,0.2)] border-2 border-ritual/30 overflow-hidden bg-[#0A1215] flex flex-col items-center justify-center" style={{ transform: 'translateZ(-1px)' }}>
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.15)_0%,transparent_70%)]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200%] h-[200%] animate-spin-slow">
               <div className="w-full h-full bg-[conic-gradient(from_0deg,transparent,rgba(64,255,175,0.3),transparent,rgba(7,115,69,0.3),transparent)] blur-xl" />
             </div>
-
             <div className="relative z-10 flex flex-col items-center justify-center">
               <RitualLogo className="w-50 h-50 text-ritual drop-shadow-[0_0_20px_rgba(64,255,175,0.8)]" />
             </div>
-
             <div className="absolute bottom-6 right-6">
                <div className="px-4 py-1.5 rounded-full border border-white/20 bg-black/40 backdrop-blur-md text-xs font-bold tracking-[0.2em]">
                  RITUAL CARDS
@@ -312,36 +212,111 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
             </div>
           </div>
 
-          {/* Card Front (Flip side) */}
+          {/* Card Front */}
           <div className="absolute inset-0 backface-hidden" style={{ transform: 'rotateY(180deg) translateZ(1px)' }}>
-            <RitualCard ref={cardFrontRef} profile={profile} />
+            <RitualCard ref={frontRef} profile={profile} />
           </div>
 
-          
-             <div
-               className="absolute inset-0 mix-blend-color-dodge opacity-60 pointer-events-none z-30 transition-opacity duration-300"
-               style={{
-                 background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.6) 0%, transparent 50%)`,
-                 opacity: glare.alpha
-               }}
-             />
+          {/* Dynamic Glare Overlay */}
+          <div
+            className="absolute inset-0 mix-blend-color-dodge opacity-60 pointer-events-none z-30 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(circle at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.6) 0%, transparent 50%)`,
+              opacity: glare.alpha
+            }}
+          />
 
-             {/* Holographic Shine & Pattern Layer */}
-             <div
-               className="absolute inset-0 mix-blend-screen pointer-events-none z-40 transition-opacity duration-300"
-               style={{
-                 backgroundImage: `linear-gradient(115deg, transparent 20%, rgba(64,255,175,0.4) 30%, rgba(255,255,255,0.7) 40%, transparent 50%)`,
-                 backgroundSize: '200% 200%',
-                 backgroundPosition: `${glare.x}% ${glare.y}%`,
-                 opacity: glare.alpha * 0.8
-               }}
-             />
+          {/* Holographic Shine & Pattern Layer */}
+          <div
+            className="absolute inset-0 mix-blend-screen pointer-events-none z-40 transition-opacity duration-300"
+            style={{
+              backgroundImage: `linear-gradient(115deg, transparent 20%, rgba(64,255,175,0.4) 30%, rgba(255,255,255,0.7) 40%, transparent 50%)`,
+              backgroundSize: '200% 200%',
+              backgroundPosition: `${glare.x}% ${glare.y}%`,
+              opacity: glare.alpha * 0.8
+            }}
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+});
 
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Hidden flat card for screenshot — zero-size wrapper keeps it invisible but fully rendered */}
+const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step: 'input' | 'eligible' | 'card', profile: TwitterProfile | null, onReset?: () => void, triggerDownload?: number, triggerCopy?: number }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const cardFrontRef = useRef<HTMLDivElement>(null);
+  const flatCardRef = useRef<HTMLDivElement>(null);
+  const screenshotWrapperRef = useRef<HTMLDivElement>(null);
+  const isRevealed = step === 'card';
+
+  const captureCardFront = async (): Promise<string | null> => {
+    if (!flatCardRef.current) return null;
+    const images = flatCardRef.current.getElementsByTagName('img');
+    await Promise.all(
+      Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      })
+    );
+    await document.fonts.ready;
+    void flatCardRef.current.offsetHeight;
+    await new Promise(r => setTimeout(r, 1000));
+    await toBlob(flatCardRef.current, { pixelRatio: 1, cacheBust: true });
+    const blob = await toBlob(flatCardRef.current, { pixelRatio: 2, cacheBust: true });
+    if (!blob) return null;
+    return URL.createObjectURL(blob);
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      const url = await captureCardFront();
+      if (!url) return;
+      const link = document.createElement('a');
+      link.download = `ritual-card-${profile?.username || 'wave1'}.png`;
+      link.href = url;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (error) {
+      console.error('Failed to download image:', error);
+      alert('Failed to download card image. Please try again.');
+    }
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      const url = await captureCardFront();
+      if (!url) return;
+      const response = await fetch(url);
+      const blob = await response.blob();
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      URL.revokeObjectURL(url);
+      alert('Card copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      alert('Copy failed — try the download button instead.');
+    }
+  };
+
+  useEffect(() => {
+    if (triggerDownload && triggerDownload > 0) handleDownloadImage();
+  }, [triggerDownload]);
+
+  useEffect(() => {
+    if (triggerCopy && triggerCopy > 0) handleCopyToClipboard();
+  }, [triggerCopy]);
+
+  return (
+    <div ref={screenshotWrapperRef} className="relative inline-block">
+      <RitualCardInteractive 
+        ref={cardRef} 
+        profile={profile} 
+        isRevealed={isRevealed} 
+        frontRef={cardFrontRef} 
+      />
       <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '360px', height: '500px', overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
         <RitualCard ref={flatCardRef} profile={profile} />
       </div>
@@ -426,10 +401,10 @@ function CollectionPage() {
                 transition={{ delay: idx * 0.05 }}
                 className="flex flex-col items-center gap-4"
               >
-                {/* Fully Unified Ritual Card Component */}
+                {/* Interactive TCG Card Component */}
                 <div className="w-full flex justify-center h-[310px] sm:h-[420px] items-center overflow-visible">
-                  <div className="scale-[0.55] sm:scale-[0.8] origin-center flex-shrink-0">
-                    <RitualCard profile={card} />
+                  <div className="scale-[0.55] sm:scale-[0.8] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
+                    <RitualCardInteractive profile={card} isRevealed={true} initialFlipped={false} />
                   </div>
                 </div>
               </motion.div>
