@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github } from 'lucide-react';
+import { ChevronDown, Sparkles, ArrowRight, Twitter, Loader2, Clipboard, Download, ImageDown, Share2, Github, LayoutGrid, ArrowLeft } from 'lucide-react';
 import { toPng, toBlob } from 'html-to-image';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { LOGO_BASE64 } from './logoBase64';
 
 // Fetch profile from API (works with both local server and Vercel serverless)
@@ -395,13 +396,138 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
   );
 };
 
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/collection" element={<CollectionPage />} />
+      </Routes>
+    </Router>
+  );
+}
+
+function CollectionPage() {
+  const [cards, setCards] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        const res = await fetch('https://ritual-twitter-proxy.artelamon.workers.dev/api/collection');
+        if (res.ok) {
+          const data = await res.json();
+          setCards(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch collection', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCollection();
+  }, []);
+
+  return (
+    <div className="relative min-h-screen bg-background text-white font-sans overflow-x-hidden selection:bg-ritual/30">
+      <div className="absolute top-0 left-0 right-0 h-[70vh] bg-[radial-gradient(ellipse_at_top,rgba(64,255,175,0.06)_0%,transparent_80%)] pointer-events-none z-0" />
+      
+      <nav className="relative z-10 max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <Link to="/" className="flex items-center gap-2 group text-gray-400 hover:text-ritual transition-colors">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-bold">Back to Forge</span>
+        </Link>
+        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-12 select-none" draggable={false} />
+        <div className="w-24 hidden sm:block"></div> {/* Spacer */}
+      </nav>
+
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+            Community <span className="text-ritual">Collection</span>
+          </h1>
+          <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto">
+            A mystical wall of contributors who have forged their cards in Wave 1.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+            <Loader2 className="w-10 h-10 text-ritual animate-spin" />
+            <p className="text-gray-500 font-medium">Summoning the gallery...</p>
+          </div>
+        ) : cards.length === 0 ? (
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
+            <p className="text-gray-500 text-xl font-medium">The vault is currently empty. Be the first to forge a card!</p>
+            <Link to="/" className="mt-6 inline-block px-6 py-3 bg-ritual text-background font-bold rounded-xl hover:bg-white transition-colors">
+              Go to Forge
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+            {cards.map((card, idx) => (
+              <motion.div
+                key={`${card.username}-${idx}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex flex-col items-center gap-4"
+              >
+                {/* Static Representation of the Card */}
+                <div className="w-full aspect-[3/4.2] rounded-[18px] p-[10px] bg-gradient-to-br from-white/10 to-ritual/5 border border-white/10 relative group overflow-hidden shadow-2xl">
+                   <div className="absolute inset-0 bg-[#0A1215] z-0" />
+                   <div className="absolute inset-x-0 h-1 top-4 bg-ritual/40 blur-xl group-hover:h-3 transition-all" />
+                   
+                   <div className="relative z-10 flex flex-col h-full">
+                      {/* Name Plate */}
+                      <div className="bg-[#111A15] p-2 rounded-lg border border-ritual/20 mb-2 truncate text-center">
+                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">{card.displayName}</span>
+                      </div>
+                      
+                      {/* Avatar Square */}
+                      <div className="flex-1 rounded-lg overflow-hidden relative border border-white/5">
+                        <img 
+                          src={card.avatar || '/blank-avatar.png'} 
+                          alt={card.username}
+                          className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+                        />
+                      </div>
+                      
+                      {/* Badge / Logo */}
+                      <div className="mt-2 flex items-center justify-between px-1">
+                        <RitualLogo className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
+                        <span className="text-[8px] text-ritual tracking-tighter opacity-70">WAVE 1</span>
+                      </div>
+                   </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-300">@{card.username}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
+                    {new Date(card.timestamp || Date.now()).toLocaleDateString()}
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <footer className="mt-24 text-center pb-8 flex flex-col items-center gap-4 border-t border-white/5 pt-12">
+        <RitualLogo className="w-8 h-8 text-gray-700" />
+        <p className="text-gray-600 text-xs tracking-widest uppercase">Ritual Community Cards</p>
+      </footer>
+    </div>
+  );
+}
+
 interface TwitterProfile {
   avatar: string | null;
   displayName: string;
   username: string;
 }
 
-export default function App() {
+function HomePage() {
+  const navigate = useNavigate();
   const [handle, setHandle] = useState('');
   const [step, setStep] = useState<'input' | 'eligible' | 'card'>('input');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -459,8 +585,13 @@ export default function App() {
       )}
 
       {/* Navbar */}
-      <nav className="relative z-10 max-w-6xl mx-auto my-0 px-5 pt-5 pb-0 flex items-center justify-center">
-        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-20 select-none" draggable={false} />
+      <nav className="relative z-10 max-w-6xl mx-auto my-0 px-5 pt-8 pb-0 flex items-center justify-between">
+        <div className="w-32 hidden sm:block"></div> {/* Spacer to center logo */}
+        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-16 select-none" draggable={false} />
+        <Link to="/collection" className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 hover:bg-ritual/10 border border-white/10 hover:border-ritual/30 transition-all group">
+          <LayoutGrid className="w-4 h-4 text-gray-400 group-hover:text-ritual" />
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-400 group-hover:text-white">Collection</span>
+        </Link>
       </nav>
 
       {/* Main Content */}

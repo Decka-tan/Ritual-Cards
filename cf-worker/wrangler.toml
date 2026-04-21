@@ -4,3 +4,7 @@ compatibility_date = "2024-01-01"
 
 [vars]
 # No env vars needed
+
+[[kv_namespaces]]
+binding = "CARD_COLLECTION"
+id = "ba4167d12c5f42d19296be0b25e1daac"

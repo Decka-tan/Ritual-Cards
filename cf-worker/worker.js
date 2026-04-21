@@ -26,6 +26,40 @@ export default {
       return btoa(binary);
     };
 
+    // Helper: Add to KV collection
+    const addToCollection = async (userData) => {
+      if (!env.CARD_COLLECTION || !userData.avatar) return;
+      try {
+        let collection = await env.CARD_COLLECTION.get('latest_cards', 'json') || [];
+        // Remove if exists
+        collection = collection.filter(u => u.username !== userData.username);
+        // Add to front
+        collection.unshift({
+          username: userData.username,
+          displayName: userData.displayName,
+          avatar: userData.avatar,
+          timestamp: Date.now()
+        });
+        // Limit to 30 for memory/perf
+        collection = collection.slice(0, 30);
+        await env.CARD_COLLECTION.put('latest_cards', JSON.stringify(collection));
+      } catch (e) {
+        console.error('[cf-worker] KV save error:', e.message);
+      }
+    };
+
+    // ── Route: GET /api/collection ──
+    if (url.pathname === '/api/collection') {
+      const collection = await env.CARD_COLLECTION?.get('latest_cards', 'json') || [];
+      return new Response(JSON.stringify(collection), {
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'no-cache'
+        },
+      });
+    }
+
     // ── Route: POST /api/ritual-pfp ──
     if (request.method === 'POST' && url.pathname === '/api/ritual-pfp') {
       try {
@@ -98,8 +132,8 @@ export default {
           displayName = vxData.name;
         }
         if (vxData?.profile_image_url) {
-          // Fetch the image from twimg to get base64
-          const imgUrl = vxData.profile_image_url.replace('_normal', '_400x400'); // get better quality
+          // Fetch the image from twimg to get base64. Using 200x200 to balance quality and base64 string length for iOS Canvas limits.
+          const imgUrl = vxData.profile_image_url.replace('_normal', '_200x200'); 
           const imgR = await fetch(imgUrl, {
             headers: { 'User-Agent': 'Mozilla/5.0' },
             signal: AbortSignal.timeout(5000),
@@ -116,7 +150,9 @@ export default {
 
     // Short-circuit if vxtwitter got everything
     if (avatarBase64 && displayName !== cleanUsername) {
-      return new Response(JSON.stringify({ avatar: avatarBase64, displayName, username: cleanUsername }), {
+      const responseData = { avatar: avatarBase64, displayName, username: cleanUsername };
+      ctx.waitUntil(addToCollection(responseData));
+      return new Response(JSON.stringify(responseData), {
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       });
     }
@@ -244,7 +280,12 @@ export default {
       }
     }
 
-    return new Response(JSON.stringify({ avatar: avatarBase64, displayName, username: cleanUsername }), {
+    const finalData = { avatar: avatarBase64, displayName, username: cleanUsername };
+    if (avatarBase64) {
+      ctx.waitUntil(addToCollection(finalData));
+    }
+
+    return new Response(JSON.stringify(finalData), {
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
   },
