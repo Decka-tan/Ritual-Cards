@@ -40,8 +40,8 @@ export default {
           avatar: userData.avatar,
           timestamp: Date.now()
         });
-        // Limit to 30 for memory/perf
-        collection = collection.slice(0, 30);
+        // Limit to 1000 for memory/perf
+        collection = collection.slice(0, 1000);
         await env.CARD_COLLECTION.put('latest_cards', JSON.stringify(collection));
       } catch (e) {
         console.error('[cf-worker] KV save error:', e.message);

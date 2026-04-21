@@ -325,35 +325,6 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
   );
 };
 
-            <p className="text-gray-500 text-xl font-medium">The vault is currently empty. Be the first to forge a card!</p>
-            <Link to="/" className="mt-6 inline-block px-6 py-3 bg-ritual text-background font-bold rounded-xl hover:bg-white transition-colors">
-              Go to Forge
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-8">
-            {cards.map((card, idx) => (
-              <motion.div
-                key={`${card.username}-${idx}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex flex-col items-center gap-4"
-              >
-                {/* Interactive TCG Card Component */}
-                <div className="w-full flex justify-center h-[285px] sm:h-[390px] items-center overflow-visible">
-                  <div className="scale-[0.55] sm:scale-[0.75] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
-                    <RitualCardInteractive profile={card} isRevealed={true} initialFlipped={false} />
-                  </div>
-  );
-}
-
-interface TwitterProfile {
-  avatar: string | null;
-  displayName: string;
-  username: string;
-}
-
 function HomePage() {
   const navigate = useNavigate();
   const [handle, setHandle] = useState('');
