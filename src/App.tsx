@@ -427,17 +427,10 @@ function CollectionPage() {
                 className="flex flex-col items-center gap-4"
               >
                 {/* Fully Unified Ritual Card Component */}
-                <div className="w-full flex justify-center h-[320px] sm:h-[400px] items-center overflow-hidden">
-                  <div className="scale-[0.6] sm:scale-[0.8] origin-center flex-shrink-0">
+                <div className="w-full flex justify-center h-[310px] sm:h-[420px] items-center overflow-visible">
+                  <div className="scale-[0.55] sm:scale-[0.8] origin-center flex-shrink-0">
                     <RitualCard profile={card} />
                   </div>
-                </div>
-
-                <div className="text-center -mt-8 sm:-mt-2">
-                  <p className="text-sm font-bold text-gray-300">@{card.username}</p>
-                  <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
-                    {new Date(card.timestamp || Date.now()).toLocaleDateString()}
-                  </p>
                 </div>
               </motion.div>
             ))}
