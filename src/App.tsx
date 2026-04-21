@@ -39,6 +39,23 @@ const RitualLogo = ({ className }: { className?: string }) => (
   <img src={LOGO_BASE64} alt="Ritual Logo" className={className} />
 );
 
+const Footer = () => (
+  <div className="mt-24 text-center pb-8 border-t border-white/10 pt-8 flex flex-col items-center">
+    <RitualLogo className="w-8 h-8 text-gray-500 mb-4" />
+    <p className="text-gray-500 text-sm mt-3">&copy; {new Date().getFullYear()} Ritual Cards.</p>
+    <p className="text-gray-600 text-xs mt-1 flex items-center gap-2">
+      Built by Decka-chan
+      <a href="https://x.com/decka_chan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="Twitter / X">
+        <Twitter className="w-3.5 h-3.5" />
+      </a>
+      <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="GitHub">
+        <Github className="w-3.5 h-3.5" />
+      </a>
+    </p>
+    <p className="text-gray-700 text-xs mt-1 tracking-widest uppercase">Just For Fun</p>
+  </div>
+);
+
 const ARCHETYPES = [
   { title: 'Ritualized',   subtitle: 'People ascended to ritual forge' },
   { title: 'The Forged',   subtitle: 'People shaped by the fire' },
@@ -512,10 +529,7 @@ function CollectionPage() {
         )}
       </main>
 
-      <footer className="mt-24 text-center pb-8 flex flex-col items-center gap-4 border-t border-white/5 pt-12">
-        <RitualLogo className="w-8 h-8 text-gray-700" />
-        <p className="text-gray-600 text-xs tracking-widest uppercase">Ritual Community Cards</p>
-      </footer>
+      <Footer />
     </div>
   );
 }
@@ -805,21 +819,7 @@ function HomePage() {
           ))}
         </div>
         
-        {/* Footer Text */}
-        <div className="mt-24 text-center pb-8 border-t border-white/10 pt-8 flex flex-col items-center">
-            <RitualLogo className="w-8 h-8 text-gray-500 mb-4" />
-            <p className="text-gray-500 text-sm mt-3">&copy; {new Date().getFullYear()} Ritual Cards.</p>
-            <p className="text-gray-600 text-xs mt-1 flex items-center gap-2">
-              Built by Decka-chan
-              <a href="https://x.com/decka_chan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="Twitter / X">
-                <Twitter className="w-3.5 h-3.5" />
-              </a>
-              <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors" title="GitHub">
-                <Github className="w-3.5 h-3.5" />
-              </a>
-            </p>
-            <p className="text-gray-700 text-xs mt-1 tracking-widest uppercase">Just For Fun</p>
-        </div>
+        <Footer />
       </section>
       </main>
     </div>
