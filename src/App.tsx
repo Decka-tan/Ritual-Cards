@@ -392,7 +392,7 @@ function CollectionPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-20">
             {cards.map((card, idx) => (
               <motion.div
                 key={`${card.username}-${idx}`}
@@ -402,8 +402,8 @@ function CollectionPage() {
                 className="flex flex-col items-center gap-4"
               >
                 {/* Interactive TCG Card Component */}
-                <div className="w-full flex justify-center h-[310px] sm:h-[420px] items-center overflow-visible">
-                  <div className="scale-[0.55] sm:scale-[0.8] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
+                <div className="w-full flex justify-center h-[300px] sm:h-[420px] items-center overflow-visible">
+                  <div className="scale-[0.55] sm:scale-[0.75] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
                     <RitualCardInteractive profile={card} isRevealed={true} initialFlipped={false} />
                   </div>
                 </div>
