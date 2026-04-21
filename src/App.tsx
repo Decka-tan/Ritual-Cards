@@ -54,51 +54,52 @@ const RitualCard = React.forwardRef<HTMLDivElement, { profile: TwitterProfile | 
 
        {/* Content Layout */}
        <div className="p-3 h-full flex flex-col relative z-20">
-       {/* Top Bar */}
-       <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
-         <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-         <span className="flex-1 min-w-0 font-bold text-md sm:text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
-         <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
-       </div>
+        {/* Top Bar */}
+        <div className="bg-[#111A15] mt-1 mb-1 mx-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
+          <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
+          <span className="flex-1 min-w-0 font-bold text-md sm:text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
+          <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
+        </div>
 
-       {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
-        <div className="flex-1 mt-2 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center min-h-[220px] sm:min-h-[280px]">
-          <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
-            {/* Same border as card */}
-            <div className="absolute inset-0 rounded-xl p-[8px]" style={{
-              background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
-            }} />
-            <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-            {profile?.avatar ? (
-              <img src={profile.avatar} alt={profile?.username || 'avatar'} className="w-full h-full object-cover" crossOrigin="anonymous" />
-            ) : (
-              <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
-            )}
-              </div>
-            </div>
+        {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
+         <div className="flex-1 mt-2 mx-3 rounded-xl overflow-visible relative flex items-start justify-center min-h-[220px] sm:min-h-[280px]">
+           <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
+             {/* Same border as card */}
+             <div className="absolute inset-0 rounded-xl p-[8px]" style={{
+               background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+             }} />
+             <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
+               <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+             {profile?.avatar ? (
+               <img src={profile.avatar} alt={profile?.username || 'avatar'} className="w-full h-full object-cover" crossOrigin="anonymous" />
+             ) : (
+               <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
+             )}
+               </div>
+             </div>
+           </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="p-0 mx-3 mt-0 pb-8 sm:pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
+          <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
+            <RitualLogo className="w-10 h-10 text-ritual" />
           </div>
-       </div>
-
-       {/* Bottom Bar */}
-       <div className="p-0 m-3 mt-0 pb-8 sm:pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
-         <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
-           <RitualLogo className="w-10 h-10 text-ritual" />
-         </div>
-         <div className="flex-1 pb-2 min-w-0">
-           <div className="font-bold text-md sm:text-lg text-gray-100 truncate pb-0.5 sm:pb-1 leading-tight">{getArchetype(profile?.username || '').title}</div>
-           <div className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 leading-tight">{getArchetype(profile?.username || '').subtitle}</div>
-         </div>
-       </div>
-       <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">RITUAL CARD</div>
-       <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
-         <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
-         <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
-       </div>
+          <div className="flex-1 pb-2 min-w-0">
+            <div className="font-bold text-md sm:text-lg text-gray-100 truncate pb-0.5 sm:pb-1 leading-tight">{getArchetype(profile?.username || '').title}</div>
+            <div className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 leading-tight">{getArchetype(profile?.username || '').subtitle}</div>
+          </div>
+        </div>
+        <div className="absolute bottom-3 left-6 text-[7px] font-italic text-white/80 tracking-wider z-30 opacity-70">RITUAL CARD</div>
+        <div className="absolute bottom-2 right-6 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
+          <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
+          <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
+        </div>
        </div>
      </div>
   </div>
 ));
+
 
 const Footer = () => (
   <div className="mt-24 text-center pb-8 border-t border-white/10 pt-8 flex flex-col items-center">
