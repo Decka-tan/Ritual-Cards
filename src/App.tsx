@@ -325,75 +325,13 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
   );
 };
 
-export default function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/collection" element={<CollectionPage />} />
-      </Routes>
-    </Router>
-  );
-}
-
-function CollectionPage() {
-  const [cards, setCards] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCollection = async () => {
-      try {
-        const res = await fetch('https://ritual-twitter-proxy.artelamon.workers.dev/api/collection');
-        if (res.ok) {
-          const data = await res.json();
-          setCards(data);
-        }
-      } catch (e) {
-        console.error('Failed to fetch collection', e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCollection();
-  }, []);
-
-  return (
-    <div className="relative min-h-screen bg-background text-white font-sans overflow-x-hidden selection:bg-ritual/30">
-      <div className="absolute top-0 left-0 right-0 h-[70vh] bg-[radial-gradient(ellipse_at_top,rgba(64,255,175,0.06)_0%,transparent_80%)] pointer-events-none z-0" />
-      
-      <nav className="relative z-10 max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <Link to="/" className="flex items-center gap-2 group text-gray-400 hover:text-ritual transition-colors">
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-bold">Back to Forge</span>
-        </Link>
-        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-12 select-none" draggable={false} />
-        <div className="w-24 hidden sm:block"></div> {/* Spacer */}
-      </nav>
-
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
-            Community <span className="text-ritual">Collection</span>
-          </h1>
-          <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto">
-            A mystical wall of contributors who have forged their cards in Wave 1.
-          </p>
-        </div>
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-            <Loader2 className="w-10 h-10 text-ritual animate-spin" />
-            <p className="text-gray-500 font-medium">Summoning the gallery...</p>
-          </div>
-        ) : cards.length === 0 ? (
-          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
             <p className="text-gray-500 text-xl font-medium">The vault is currently empty. Be the first to forge a card!</p>
             <Link to="/" className="mt-6 inline-block px-6 py-3 bg-ritual text-background font-bold rounded-xl hover:bg-white transition-colors">
               Go to Forge
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-8">
             {cards.map((card, idx) => (
               <motion.div
                 key={`${card.username}-${idx}`}
@@ -403,19 +341,10 @@ function CollectionPage() {
                 className="flex flex-col items-center gap-4"
               >
                 {/* Interactive TCG Card Component */}
-                <div className="w-full flex justify-center h-[300px] sm:h-[420px] items-center overflow-visible">
+                <div className="w-full flex justify-center h-[285px] sm:h-[390px] items-center overflow-visible">
                   <div className="scale-[0.55] sm:scale-[0.75] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
                     <RitualCardInteractive profile={card} isRevealed={true} initialFlipped={false} />
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        )}
-      </main>
-
-      <Footer />
-    </div>
   );
 }
 
@@ -710,5 +639,102 @@ function HomePage() {
     </div>
   );
 }
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/collection" element={<CollectionPage />} />
+      </Routes>
+    </Router>
+  );
+}
 
+function CollectionPage() {
+  const [cards, setCards] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchCollection = async () => {
+      try {
+        const res = await fetch('https://ritual-twitter-proxy.artelamon.workers.dev/api/collection');
+        if (res.ok) {
+          const data = await res.json();
+          setCards(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch collection', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchCollection();
+  }, []);
+
+  return (
+    <div className="relative min-h-screen bg-background text-white font-sans overflow-x-hidden selection:bg-ritual/30">
+      <div className="absolute top-0 left-0 right-0 h-[70vh] bg-[radial-gradient(ellipse_at_top,rgba(64,255,175,0.06)_0%,transparent_80%)] pointer-events-none z-0" />
+      
+      <nav className="relative z-10 max-w-7xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <Link to="/" className="flex items-center gap-2 group text-gray-400 hover:text-ritual transition-colors">
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-bold">Back to Forge</span>
+        </Link>
+        <img src="/ritual-wordmark.png" alt="RITUAL" className="h-12 select-none" draggable={false} />
+        <div className="w-24 hidden sm:block"></div> {/* Spacer */}
+      </nav>
+
+      <main className="relative z-10 max-w-7xl mx-auto px-6 pb-24">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
+            Community <span className="text-ritual">Collection</span>
+          </h1>
+          <p className="text-gray-400 text-lg sm:text-xl max-w-2xl mx-auto">
+            A mystical wall of contributors who have forged their cards in Wave 1.
+          </p>
+        </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+            <Loader2 className="w-10 h-10 text-ritual animate-spin" />
+            <p className="text-gray-500 font-medium">Summoning the gallery...</p>
+          </div>
+        ) : cards.length === 0 ? (
+          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10">
+            <p className="text-gray-500 text-xl font-medium">The vault is currently empty. Be the first to forge a card!</p>
+            <Link to="/" className="mt-6 inline-block px-6 py-3 bg-ritual text-background font-bold rounded-xl hover:bg-white transition-colors">
+              Go to Forge
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-12 gap-y-8">
+            {cards.map((card, idx) => (
+              <motion.div
+                key={`${card.username}-${idx}`}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex flex-col items-center gap-4"
+              >
+                {/* Interactive TCG Card Component */}
+                <div className="w-full flex justify-center h-[285px] sm:h-[390px] items-center overflow-visible">
+                  <div className="scale-[0.55] sm:scale-[0.75] origin-center flex-shrink-0 relative z-30 hover:z-50 transition-[z-index]">
+                    <RitualCardInteractive profile={card} isRevealed={true} initialFlipped={false} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
+
+interface TwitterProfile {
+  avatar: string | null;
+  displayName: string;
+  username: string;
+}
