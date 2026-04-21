@@ -39,6 +39,67 @@ const RitualLogo = ({ className }: { className?: string }) => (
   <img src={LOGO_BASE64} alt="Ritual Logo" className={className} />
 );
 
+const RitualCard = React.forwardRef<HTMLDivElement, { profile: TwitterProfile | null }>(({ profile }, ref) => (
+  <div ref={ref} className="w-[310px] h-[430px] sm:w-[360px] sm:h-[500px] rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden relative">
+     {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
+     <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
+       background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+     }} />
+
+     {/* Inner card area with padding */}
+     <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
+       {/* Black to Green gradient background (more pronounced green) */}
+       <div className="absolute inset-0 bg-gradient-to-b from-[#0A1215] via-[#1a3d30] to-[#0A1215]" />
+       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
+
+       {/* Content Layout */}
+       <div className="p-3 h-full flex flex-col relative z-20">
+       {/* Top Bar */}
+       <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
+         <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
+         <span className="flex-1 min-w-0 font-bold text-md sm:text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
+         <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
+       </div>
+
+       {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
+        <div className="flex-1 mt-2 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center min-h-[220px] sm:min-h-[280px]">
+          <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
+            {/* Same border as card */}
+            <div className="absolute inset-0 rounded-xl p-[8px]" style={{
+              background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
+            }} />
+            <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+            {profile?.avatar ? (
+              <img src={profile.avatar} alt={profile?.username || 'avatar'} className="w-full h-full object-cover" crossOrigin="anonymous" />
+            ) : (
+              <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
+            )}
+              </div>
+            </div>
+          </div>
+       </div>
+
+       {/* Bottom Bar */}
+       <div className="p-0 m-3 mt-0 pb-8 sm:pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
+         <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
+           <RitualLogo className="w-10 h-10 text-ritual" />
+         </div>
+         <div className="flex-1 pb-2 min-w-0">
+           <div className="font-bold text-md sm:text-lg text-gray-100 truncate pb-0.5 sm:pb-1 leading-tight">{getArchetype(profile?.username || '').title}</div>
+           <div className="text-[10px] sm:text-xs text-gray-400 line-clamp-1 leading-tight">{getArchetype(profile?.username || '').subtitle}</div>
+         </div>
+       </div>
+       <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">RITUAL CARD</div>
+       <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
+         <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
+         <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
+       </div>
+       </div>
+     </div>
+  </div>
+));
+
 const Footer = () => (
   <div className="mt-24 text-center pb-8 border-t border-white/10 pt-8 flex flex-col items-center">
     <RitualLogo className="w-8 h-8 text-gray-500 mb-4" />
@@ -252,71 +313,11 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
           </div>
 
           {/* Card Front (Flip side) */}
-          <div ref={cardFrontRef} className="absolute inset-0 backface-hidden rounded-[24px] shadow-[0_0_70px_rgba(64,255,175,0.3)] overflow-hidden" style={{ transform: 'rotateY(180deg) translateZ(1px)' }}>
-             {/* TCG Border with X pattern White to Dark Green progression (80% thickness) */}
-             <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
-               background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
-             }} />
+          <div className="absolute inset-0 backface-hidden" style={{ transform: 'rotateY(180deg) translateZ(1px)' }}>
+            <RitualCard ref={cardFrontRef} profile={profile} />
+          </div>
 
-             {/* Inner card area with padding */}
-             <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
-               {/* Black to Green gradient background (more pronounced green) */}
-               <div className="absolute inset-0 bg-gradient-to-b from-[#0A1215] via-[#1a3d30] to-[#0A1215]" />
-               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.25)_0%,transparent_100%)]" />
-
-               {/* Content Layout */}
-               <div className="p-3 h-full flex flex-col relative z-20">
-               {/* Top Bar */}
-               <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-3 sm:p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
-                 <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-                 <span className="flex-1 min-w-0 font-bold text-md sm:text-lg text-white truncate relative z-10">{profile?.displayName || profile?.username || 'Your Username'}</span>
-                 <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-ritual shrink-0 relative z-10" />
-               </div>
-
-               {/* Main Character Art Space - Profile Avatar with Card Border (84% size, 20% bigger) */}
-                <div className="flex-1 mt-2 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center min-h-[220px] sm:min-h-[280px]">
-                  <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510] group perspective-1000">
-                    {/* Same border as card */}
-                    <div className="absolute inset-0 rounded-xl p-[8px]" style={{
-                      background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
-                    }} />
-                    <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
-                      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile?.username || 'avatar'} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                    ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
-                    )}
-                      </div>
-                    </div>
-                  </div>
-               </div>
-
-               {/* Bottom Bar */}
-               <div className="p-0 m-3 mt-0 pb-8 sm:pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
-                 <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
-                   <RitualLogo className="w-10 h-10 text-ritual" />
-                 </div>
-                 <div className="flex-1 pb-2 min-w-0">
-                   <div className="font-bold text-md sm:text-lg text-gray-100 truncate pb-0.5">{getArchetype(profile?.username || '').title}</div>
-                   <div className="text-xs sm:text-sm text-gray-400 break-words leading-tight">{getArchetype(profile?.username || '').subtitle}</div>
-                 </div>
-               </div>
-
-               {/* Ritual Card text in bottom left */}
-               <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">
-                 RITUAL CARD
-               </div>
-
-               {/* Wave 1 text in bottom right, aligned with Ritual Card */}
-               <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
-                 <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
-                 <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
-               </div>
-               </div>
-             </div>
-
-             {/* Dynamic Glare Overlay */}
+          
              <div
                className="absolute inset-0 mix-blend-color-dodge opacity-60 pointer-events-none z-30 transition-opacity duration-300"
                style={{
@@ -341,72 +342,9 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
       </motion.div>
       </div>
 
-      {/* Hidden flat card for screenshot Ã¢â‚¬â€ zero-size wrapper keeps it invisible but fully rendered */}
+      {/* Hidden flat card for screenshot — zero-size wrapper keeps it invisible but fully rendered */}
       <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '360px', height: '500px', overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
-        <div
-          ref={flatCardRef}
-          style={{
-            position: 'relative',
-            width: '360px',
-            height: '500px',
-            borderRadius: '24px',
-            overflow: 'hidden',
-          }}
-        >
-        {/* TCG Border */}
-        <div className="absolute inset-0 rounded-[24px] p-[16px]" style={{
-          background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
-        }} />
-        {/* Inner area */}
-        <div className="absolute inset-[16px] rounded-[20px] overflow-hidden">
-          <div className="absolute inset-0 bg-[#0A1215]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(64,255,175,0.2)_0%,transparent_100%)]" />
-          <div className="p-3 h-full flex flex-col relative z-20">
-            {/* Top Bar */}
-            <div className="bg-[#111A15] mt-1 mb-1 mr-3 ml-3 p-5 rounded-t-xl rounded-b-xl flex items-center justify-between border-[#40FFAF]/30 border-2 relative overflow-hidden gap-x-2">
-              <div className="absolute inset-0 bg-gradient-to-r from-ritual/20 to-transparent" />
-              <span className="flex-1 min-w-0 font-bold text-lg text-white truncate relative z-10" style={{ fontFamily: 'Inter, sans-serif' }}>
-                {profile?.displayName || profile?.username || 'Your Username'}
-              </span>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#40FFAF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 relative z-10">
-                <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-                <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-              </svg>
-            </div>
-            {/* Avatar */}
-            <div className="flex-1 mt-3 ml-6 mr-6 rounded-xl overflow-visible relative flex items-start justify-center" style={{ minHeight: '280px' }}>
-              <div className="w-[100%] h-[90%] rounded-xl overflow-hidden relative bg-[#091510]">
-                <div className="absolute inset-0 rounded-xl p-[8px]" style={{
-                  background: 'conic-gradient(from 45deg at 50% 50%, #FFFFFF 0deg, #40FFAF 45deg, #077345 90deg, #FFFFFF 180deg, #40FFAF 225deg, #077345 270deg, #FFFFFF 360deg)'
-                }} />
-                <div className="absolute inset-[8px] rounded-[8px] overflow-hidden bg-[#091510]">
-                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                    {profile?.avatar ? (
-                      <img src={profile.avatar} alt={profile.username} className="w-full h-full object-cover" crossOrigin="anonymous" />
-                    ) : (
-                      <img src="/blank-avatar.png" alt="blank avatar" className="w-full h-full object-cover" />
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-            {/* Bottom Bar */}
-            <div className="p-0 m-3 mt-0 pb-10 rounded-b-xl rounded-t flex items-center gap-3 relative z-20">
-              <div className="w-14 h-14 rounded-lg bg-black/60 border border-ritual/20 flex flex-col items-center justify-center shrink-0">
-                <RitualLogo className="w-10 h-10 text-ritual" />
-              </div>
-              <div className="flex-1 pb-2">
-                <div className="font-bold text-lg text-gray-100 truncate pb-1">{getArchetype(profile?.username || '').title}</div>
-                <div className="text-sm text-gray-400">{getArchetype(profile?.username || '').subtitle}</div>
-              </div>
-            </div>
-            <div className="absolute bottom-3 left-4 text-[7px] font-italic text-white/80 tracking-wider z-30">RITUAL CARD</div>
-            <div className="absolute bottom-2 right-2 z-10 bg-[#E2E8F0] text-[#0F172A] rounded-full px-2 py-[6px] flex flex-col items-center justify-center border-[2px] border-[#111A15]">
-              <span className="text-[6px] font-black leading-none uppercase tracking-widest">Wave</span>
-              <span className="text-l font-black leading-none border-t border-black/10 text-center mt-0.5">1</span>
-            </div>
-          </div>
-        </div>
+        <RitualCard ref={flatCardRef} profile={profile} />
       </div>
       </div>
     </div>
@@ -490,34 +428,14 @@ function CollectionPage() {
                 transition={{ delay: idx * 0.05 }}
                 className="flex flex-col items-center gap-4"
               >
-                {/* Static Representation of the Card */}
-                <div className="w-full aspect-[3/4.2] rounded-[18px] p-[10px] bg-gradient-to-br from-white/10 to-ritual/5 border border-white/10 relative group overflow-hidden shadow-2xl">
-                   <div className="absolute inset-0 bg-[#0A1215] z-0" />
-                   <div className="absolute inset-x-0 h-1 top-4 bg-ritual/40 blur-xl group-hover:h-3 transition-all" />
-                   
-                   <div className="relative z-10 flex flex-col h-full">
-                      {/* Name Plate */}
-                      <div className="bg-[#111A15] p-2 rounded-lg border border-ritual/20 mb-2 truncate text-center">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-widest">{card.displayName}</span>
-                      </div>
-                      
-                      {/* Avatar Square */}
-                      <div className="flex-1 rounded-lg overflow-hidden relative border border-white/5">
-                        <img 
-                          src={card.avatar || '/blank-avatar.png'} 
-                          alt={card.username}
-                          className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                      
-                      {/* Badge / Logo */}
-                      <div className="mt-2 flex items-center justify-between px-1">
-                        <RitualLogo className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" />
-                        <span className="text-[8px] text-ritual tracking-tighter opacity-70">WAVE 1</span>
-                      </div>
-                   </div>
+                {/* Fully Unified Ritual Card Component */}
+                <div className="w-full flex justify-center h-[320px] sm:h-[400px] items-center overflow-hidden">
+                  <div className="scale-[0.6] sm:scale-[0.8] origin-center flex-shrink-0">
+                    <RitualCard profile={card} />
+                  </div>
                 </div>
-                <div className="text-center">
+
+                <div className="text-center -mt-8 sm:-mt-2">
                   <p className="text-sm font-bold text-gray-300">@{card.username}</p>
                   <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">
                     {new Date(card.timestamp || Date.now()).toLocaleDateString()}
