@@ -338,14 +338,12 @@ const Card3D = ({ step, profile, onReset, triggerDownload, triggerCopy }: { step
              />
 
           </div>
-        </div>
-      </motion.div>
+        </motion.div>
       </div>
 
       {/* Hidden flat card for screenshot — zero-size wrapper keeps it invisible but fully rendered */}
       <div style={{ position: 'fixed', left: '-9999px', top: '-9999px', width: '360px', height: '500px', overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
         <RitualCard ref={flatCardRef} profile={profile} />
-      </div>
       </div>
     </div>
   );
